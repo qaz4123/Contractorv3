@@ -41,9 +41,15 @@ class Property:
     def from_dict(cls, data: Dict[str, Any]) -> 'Property':
         """Create property from dictionary."""
         if 'created_at' in data and isinstance(data['created_at'], str):
-            data['created_at'] = datetime.fromisoformat(data['created_at'])
+            try:
+                data['created_at'] = datetime.fromisoformat(data['created_at'])
+            except (ValueError, TypeError):
+                data['created_at'] = None
         if 'updated_at' in data and isinstance(data['updated_at'], str):
-            data['updated_at'] = datetime.fromisoformat(data['updated_at'])
+            try:
+                data['updated_at'] = datetime.fromisoformat(data['updated_at'])
+            except (ValueError, TypeError):
+                data['updated_at'] = None
         return cls(**data)
 
 
@@ -129,7 +135,13 @@ class PropertyAnalysis:
     def from_dict(cls, data: Dict[str, Any]) -> 'PropertyAnalysis':
         """Create from dictionary."""
         if 'analysis_date' in data and isinstance(data['analysis_date'], str):
-            data['analysis_date'] = datetime.fromisoformat(data['analysis_date'])
+            try:
+                data['analysis_date'] = datetime.fromisoformat(data['analysis_date'])
+            except (ValueError, TypeError):
+                data['analysis_date'] = datetime.now()
         if 'created_at' in data and isinstance(data['created_at'], str):
-            data['created_at'] = datetime.fromisoformat(data['created_at'])
+            try:
+                data['created_at'] = datetime.fromisoformat(data['created_at'])
+            except (ValueError, TypeError):
+                data['created_at'] = None
         return cls(**data)

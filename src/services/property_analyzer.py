@@ -105,10 +105,22 @@ class PropertyAnalyzerService:
         # Future property value
         future_value = purchase_price * math.pow(1 + appreciation_rate, holding_years)
         
-        # Equity calculation (simplified - assumes amortization)
-        total_payments = monthly_mortgage * 12 * holding_years
-        total_interest_paid = total_payments - loan_amount  # Simplified
-        principal_paid = loan_amount - (loan_amount * math.pow(1 - (monthly_mortgage * 12 / loan_amount), holding_years))
+        # Equity calculation - proper amortization calculation
+        # Calculate principal paid over holding period using amortization schedule
+        monthly_rate = (assumptions.interest_rate / 100) / 12
+        num_payments = holding_years * 12
+        
+        if monthly_rate > 0:
+            # Calculate remaining balance after holding period
+            remaining_balance = loan_amount * (
+                (math.pow(1 + monthly_rate, assumptions.loan_term_years * 12) - 
+                 math.pow(1 + monthly_rate, num_payments)) /
+                (math.pow(1 + monthly_rate, assumptions.loan_term_years * 12) - 1)
+            )
+            principal_paid = loan_amount - remaining_balance
+        else:
+            # If no interest, principal paid is simply total payments minus loan amount
+            principal_paid = min(monthly_mortgage * num_payments, loan_amount)
         
         total_equity = down_payment + principal_paid + (future_value - purchase_price)
         total_profit = (annual_cash_flow * holding_years) + total_equity - total_cash_needed

@@ -28,7 +28,10 @@ class Config:
     
     # Database Configuration (if using Cloud SQL)
     DB_HOST: Optional[str] = os.getenv('DB_HOST', '')
-    DB_PORT: int = int(os.getenv('DB_PORT', '5432'))
+    try:
+        DB_PORT: int = int(os.getenv('DB_PORT', '5432'))
+    except (ValueError, TypeError):
+        DB_PORT: int = 5432
     DB_NAME: Optional[str] = os.getenv('DB_NAME', '')
     DB_USER: Optional[str] = os.getenv('DB_USER', '')
     DB_PASSWORD: Optional[str] = os.getenv('DB_PASSWORD', '')
@@ -36,7 +39,10 @@ class Config:
     # Application Settings
     FLASK_ENV: str = os.getenv('FLASK_ENV', 'production')
     FLASK_DEBUG: bool = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
-    PORT: int = int(os.getenv('PORT', '8080'))
+    try:
+        PORT: int = int(os.getenv('PORT', '8080'))
+    except (ValueError, TypeError):
+        PORT: int = 8080
     
     @classmethod
     def validate_config(cls) -> None:
