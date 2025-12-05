@@ -1,0 +1,20 @@
+# Google Cloud App Engine configuration
+# Deploy with: gcloud app deploy
+
+runtime: python312
+entrypoint: gunicorn -b :$PORT src.api.app:app
+
+instance_class: F2
+
+automatic_scaling:
+  target_cpu_utilization: 0.65
+  min_instances: 0
+  max_instances: 10
+
+env_variables:
+  GOOGLE_CLOUD_PROJECT: ""  # Set your project ID
+  GCP_REGION: "us-central1"
+  FLASK_ENV: "production"
+  
+# Note: For production, use Google Secret Manager for sensitive values
+# Do not hardcode API keys or credentials here
