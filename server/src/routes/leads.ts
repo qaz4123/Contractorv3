@@ -598,55 +598,7 @@ router.post(
   })
 );
 
-/**
- * POST /api/leads/:id/convert-to-project
- * Convert lead to project
- */
-router.post(
-  '/:id/convert-to-project',
-  asyncHandler(async (req, res) => {
-    const { id } = req.params;
 
-    const lead = await prisma.lead.findFirst({
-      where: {
-        id,
-        userId: req.user!.userId,
-      },
-    });
-
-    if (!lead) {
-      res.status(404).json({
-        success: false,
-        error: 'Lead not found',
-      });
-      return;
-    }
-
-    // Create project from lead
-    const project = await prisma.project.create({
-      data: {
-        leadId: lead.id,
-        userId: req.user!.userId,
-        name: lead.fullAddress,
-        description: `Project converted from lead: ${lead.fullAddress}`,
-        street: lead.street,
-        city: lead.city,
-        state: lead.state,
-        zipCode: lead.zipCode,
-        status: 'PLANNING',
-        estimatedBudget: lead.profitPotential ? lead.profitPotential * 1000 : undefined,
-      },
-    });
-
-    // Update lead status to WON
-    await prisma.lead.update({
-      where: { id },
-      data: { status: LeadStatus.WON },
-    });
-
-    res.json(project);
-  })
-);
 
 /**
  * DELETE /api/leads/:id

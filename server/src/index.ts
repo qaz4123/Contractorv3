@@ -91,12 +91,32 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Request logging
+// Request logging with correlation IDs and structured logging
 app.use((req, res, next) => {
   const start = Date.now();
+  const correlationId = req.headers['x-correlation-id'] || `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+  
+  // Add correlation ID to request for downstream use
+  (req as any).correlationId = correlationId;
+  res.setHeader('X-Correlation-ID', correlationId);
+  
   res.on('finish', () => {
     const duration = Date.now() - start;
-    console.log(`${req.method} ${req.path} ${res.statusCode} ${duration}ms`);
+    // Structured logging for Cloud Logging
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      severity: res.statusCode >= 500 ? 'ERROR' : res.statusCode >= 400 ? 'WARNING' : 'INFO',
+      correlationId,
+      httpRequest: {
+        requestMethod: req.method,
+        requestUrl: req.path,
+        status: res.statusCode,
+        latency: `${duration}ms`,
+        userAgent: req.headers['user-agent'],
+        remoteIp: req.ip,
+      },
+    };
+    console.log(JSON.stringify(logEntry));
   });
   next();
 });
