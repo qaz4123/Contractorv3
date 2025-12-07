@@ -107,7 +107,9 @@ export function Leads() {
                 <span className="text-xs text-gray-400">/100</span>
               </div>
               {lead.overallScore >= 70 && (
-                <span className="text-xs text-green-600 font-medium">Hot Lead 🔥</span>
+                <span className="text-xs text-green-600 font-medium" aria-label="Hot Lead">
+                  Hot Lead 🔥
+                </span>
               )}
               {lead.overallScore < 40 && (
                 <span className="text-xs text-gray-500">Low Priority</span>

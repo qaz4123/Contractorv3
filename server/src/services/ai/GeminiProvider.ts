@@ -253,7 +253,7 @@ SCORING GUIDELINES FOR CONTRACTORS (STRICT):
 - Owner Motivation: Base score 30-50, +20 for business at property, +15 for recent permits, +10 for recent sale
 - Profit Potential: Base score 40-60, +15 for high equity, +10 for renovation need, -20 if no valuation
 - Overall: Weighted average (30% lead quality, 25% renovation, 25% motivation, 20% profit) adjusted for data quality
-- NEVER use exactly 50 for any score - use evidence-based values between 20-85`;
+- Avoid generic scores like exactly 50 - use evidence-based values; only use 50 if truly justified by balanced evidence`;
   }
 
   /**

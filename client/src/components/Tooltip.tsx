@@ -18,6 +18,25 @@ export function Tooltip({ content, children, position = 'top', className = '' }:
     right: 'left-full top-1/2 -translate-y-1/2 ml-2',
   };
 
+  const getArrowPosition = () => {
+    const arrowOffset = '-4px';
+    const arrowTransform = 'rotate(45deg)';
+    
+    if (position === 'top' || position === 'bottom') {
+      return {
+        [position === 'top' ? 'bottom' : 'top']: arrowOffset,
+        left: '50%',
+        transform: `translateX(-50%) ${arrowTransform}`,
+      };
+    } else {
+      return {
+        [position === 'left' ? 'right' : 'left']: arrowOffset,
+        top: '50%',
+        transform: `translateY(-50%) ${arrowTransform}`,
+      };
+    }
+  };
+
   return (
     <div className="relative inline-flex">
       <div
@@ -32,12 +51,9 @@ export function Tooltip({ content, children, position = 'top', className = '' }:
           className={`absolute z-50 px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded-lg shadow-lg whitespace-nowrap ${positionClasses[position]}`}
         >
           {content}
-          <div className="absolute w-2 h-2 bg-gray-900 transform rotate-45"
-            style={{
-              [position === 'top' ? 'bottom' : position === 'bottom' ? 'top' : position === 'left' ? 'right' : 'left']: '-4px',
-              ...(position === 'top' || position === 'bottom' ? { left: '50%', transform: 'translateX(-50%) rotate(45deg)' } : 
-                  { top: '50%', transform: 'translateY(-50%) rotate(45deg)' })
-            }}
+          <div 
+            className="absolute w-2 h-2 bg-gray-900"
+            style={getArrowPosition()}
           />
         </div>
       )}
