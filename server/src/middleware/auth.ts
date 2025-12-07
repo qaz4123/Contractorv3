@@ -18,11 +18,11 @@ declare global {
 
 /**
  * Authenticate request - required
- * Use AUTH_DISABLED=true in development to skip authentication
+ * Use AUTH_DISABLED=true to skip authentication (for demo/testing)
  */
 export function authenticate(req: Request, res: Response, next: NextFunction): void {
-  // Allow bypassing auth in development
-  if (process.env.AUTH_DISABLED === 'true' && process.env.NODE_ENV === 'development') {
+  // Allow bypassing auth when AUTH_DISABLED is set
+  if (process.env.AUTH_DISABLED === 'true') {
     req.user = {
       userId: 'demo-user-id',
       email: 'demo@contractorcrm.com',
