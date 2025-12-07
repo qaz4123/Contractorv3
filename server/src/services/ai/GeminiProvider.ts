@@ -30,8 +30,17 @@ export interface PropertyAnalysisInput {
   searchResults: SearchResult[];
 }
 
+export interface DataQuality {
+  score: number;
+  missingFields: string[];
+  confidence: 'low' | 'moderate' | 'high';
+  sourcesCount: number;
+  notes?: string;
+}
+
 export interface GeminiAnalysisOutput {
   scores: PropertyScores;
+  dataQuality?: DataQuality;
   details: {
     bedrooms?: number;
     bathrooms?: number;
@@ -133,21 +142,55 @@ ${input.city}, ${input.state} ${input.zipCode}
 SEARCH DATA:
 ${searchContext}
 
+**CRITICAL INSTRUCTIONS:**
+
+1. **DATA QUALITY MATTERS**: Penalize scores when data is missing or low-quality:
+   - Missing basic property details (sqft, beds, baths, year) = reduce scores by 10-20 points
+   - No owner information found = reduce leadQuality by 20 points
+   - No financial data (equity, value) = reduce profitPotential by 15 points
+   - Limited search results or generic info = reduce overall by 10 points
+
+2. **REWARD HIGH-CONFIDENCE DATA**: Boost scores when rich information is available:
+   - Recent permits found = increase renovationPotential by 15 points
+   - Owner business at property = increase ownerMotivation by 20 points
+   - Multiple data sources confirming details = increase overall by 10 points
+   - Recent property sale or activity = increase ownerMotivation by 10 points
+
+3. **NO MIDDLE-GROUND DEFAULTS**: Avoid generic 50/50 scores:
+   - Use actual evidence to justify scores
+   - If truly uncertain, score between 30-40 (low confidence) or 60-70 (moderate confidence)
+   - Only use 80+ when strong evidence supports it
+   - Flag data quality issues in dataQuality field
+
+4. **BUSINESS ACTIVITY DETECTION**: Actively look for:
+   - Business registered at property address (LLC, Corp, professional practice)
+   - Home office indicators (professional services, consulting, medical, legal)
+   - Signs of commercial activity at residential address
+   - Include business details if found
+
 Analyze this property and provide intelligence useful for a renovation contractor. Focus on:
 1. Property condition and renovation needs
 2. Owner financial indicators (liens, mortgages, business ownership)
-3. Permit history and status
+3. Permit history and status (CRITICAL for scoring)
 4. Renovation opportunities to pitch to the owner
+5. Data quality and confidence level
 
 IMPORTANT: Return ONLY valid JSON, no markdown formatting, no code blocks.
 
 {
   "scores": {
-    "leadQuality": <number 0-100 - how good is this lead for a contractor>,
-    "renovationPotential": <number 0-100 - how much renovation work needed>,
-    "ownerMotivation": <number 0-100 - likelihood owner will pay for renovations>,
-    "profitPotential": <number 0-100 - potential profit margin>,
-    "overall": <number 0-100>
+    "leadQuality": <number 0-100 - PENALIZE if missing owner/contact info>,
+    "renovationPotential": <number 0-100 - BOOST if permits found, PENALIZE if no condition data>,
+    "ownerMotivation": <number 0-100 - BOOST if business at property or recent permits>,
+    "profitPotential": <number 0-100 - PENALIZE if no valuation data>,
+    "overall": <number 0-100 - weighted average reflecting data quality>
+  },
+  "dataQuality": {
+    "score": <number 0-100 - how complete and reliable is the data>,
+    "missingFields": ["<list key missing data>"],
+    "confidence": "<low|moderate|high>",
+    "sourcesCount": <number of distinct sources found>,
+    "notes": "<explanation of data quality issues if any>"
   },
   "propertyDetails": {
     "bedrooms": <number or null>,
@@ -163,6 +206,7 @@ IMPORTANT: Return ONLY valid JSON, no markdown formatting, no code blocks.
     "ownerName": "<name if found or null>",
     "ownershipType": "<individual|trust|llc|corporation|unknown>",
     "businessOnProperty": "<company name if registered at address or null>",
+    "businessType": "<industry/profession if business found or null>",
     "estimatedEquity": "<high|medium|low|unknown>",
     "lengthOfOwnership": "<years or null>",
     "likelyToRenovate": "<yes|maybe|no|unknown>"
@@ -170,6 +214,7 @@ IMPORTANT: Return ONLY valid JSON, no markdown formatting, no code blocks.
   "financialIndicators": {
     "estimatedValue": <number or null>,
     "mortgageInfo": "<any mortgage/loan info found or null>",
+    "estimatedEquity": <number calculated if possible or null>,
     "liens": ["<lien 1>", "<lien 2>"] or [],
     "taxStatus": "<current|delinquent|unknown>",
     "foreclosureRisk": "<none|low|medium|high|unknown>"
@@ -178,12 +223,13 @@ IMPORTANT: Return ONLY valid JSON, no markdown formatting, no code blocks.
     "recentPermits": ["<permit 1 with date>", "<permit 2>"] or [],
     "openPermits": ["<open permit 1>"] or [],
     "lastRenovation": "<description and year or null>",
-    "permitIssues": "<any red flags or null>"
+    "permitIssues": "<any red flags or null>",
+    "permitScore": <number 0-10 based on permit activity>
   },
   "renovationOpportunities": {
     "suggestedProjects": [
-      {"project": "<project name>", "estimatedCost": "<range>", "priority": "<high|medium|low>"},
-      {"project": "<project name>", "estimatedCost": "<range>", "priority": "<high|medium|low>"}
+      {"project": "<project name>", "estimatedCost": "<range>", "priority": "<high|medium|low>", "confidence": "<low|medium|high>"},
+      {"project": "<project name>", "estimatedCost": "<range>", "priority": "<high|medium|low>", "confidence": "<low|medium|high>"}
     ],
     "urgentRepairs": ["<urgent repair 1>", "<urgent repair 2>"] or [],
     "valueAddProjects": ["<project that adds most value>"] or []
@@ -198,15 +244,16 @@ IMPORTANT: Return ONLY valid JSON, no markdown formatting, no code blocks.
     "recentContractorWork": "<any recent contractor work visible or null>",
     "neighborhoodTrend": "<are neighbors renovating? or null>"
   },
-  "summary": "<2-3 paragraph summary in ENGLISH: Overall assessment of this lead, key opportunities, recommended approach, and any red flags>"
+  "summary": "<2-3 paragraph summary in ENGLISH: Overall assessment of this lead, key opportunities, recommended approach, data quality concerns, and any red flags>"
 }
 
-SCORING GUIDELINES FOR CONTRACTORS:
-- Lead Quality: Is this a good lead to pursue? Consider owner situation, property needs, ability to pay
-- Renovation Potential: How much work does this property need?
-- Owner Motivation: Based on property age, condition, ownership length - how motivated might they be?
-- Profit Potential: Considering scope of work and area, what's the profit potential?
-- Overall: How worthwhile is it to pursue this lead?`;
+SCORING GUIDELINES FOR CONTRACTORS (STRICT):
+- Lead Quality: Base score 40-60, +20 for complete owner info, +10 for contact details, -20 if minimal info
+- Renovation Potential: Base score 40-60, +15 for recent permits, +10 for old property, -15 if no condition data
+- Owner Motivation: Base score 30-50, +20 for business at property, +15 for recent permits, +10 for recent sale
+- Profit Potential: Base score 40-60, +15 for high equity, +10 for renovation need, -20 if no valuation
+- Overall: Weighted average (30% lead quality, 25% renovation, 25% motivation, 20% profit) adjusted for data quality
+- NEVER use exactly 50 for any score - use evidence-based values between 20-85`;
   }
 
   /**
@@ -272,6 +319,13 @@ SCORING GUIDELINES FOR CONTRACTORS:
           marketTiming: this.clampScore(marketTiming),
           overall: this.clampScore(overall),
         },
+        dataQuality: parsed.dataQuality ? {
+          score: this.clampScore(parsed.dataQuality.score || 50),
+          missingFields: Array.isArray(parsed.dataQuality.missingFields) ? parsed.dataQuality.missingFields : [],
+          confidence: parsed.dataQuality.confidence || 'moderate',
+          sourcesCount: parsed.dataQuality.sourcesCount || 0,
+          notes: parsed.dataQuality.notes || undefined,
+        } : undefined,
         details: {
           bedrooms: parsed.propertyDetails?.bedrooms || parsed.details?.bedrooms || undefined,
           bathrooms: parsed.propertyDetails?.bathrooms || parsed.details?.bathrooms || undefined,
