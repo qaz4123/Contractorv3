@@ -10,8 +10,7 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "audit:reliability": "tsx src/reliability-audit/run-audit.ts",
-    "audit:quick": "tsx src/reliability-audit/run-audit.ts --quick"
+    "audit:reliability": "tsx src/reliability-audit/run-audit.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",

@@ -233,16 +233,44 @@ SCORING GUIDELINES FOR CONTRACTORS:
       const parsed = JSON.parse(cleanText);
 
       // Handle new format with leadQuality, renovationPotential etc
-      const scores = parsed.scores || {};
+      const scores = parsed.scores;
       
-      // Validate and normalize the response
+      if (!scores) {
+        throw new Error('AI response missing required "scores" object');
+      }
+      
+      // Validate and normalize the response - no fallback values
+      // Use new format names or old format names, but require at least one
+      const investment = scores.leadQuality ?? scores.investment;
+      const location = scores.location;
+      const condition = scores.renovationPotential ?? scores.condition;
+      const marketTiming = scores.ownerMotivation ?? scores.marketTiming;
+      const overall = scores.overall;
+      
+      // Validate all required scores are present
+      if (investment === undefined) {
+        throw new Error('AI response missing required score: investment/leadQuality');
+      }
+      if (location === undefined) {
+        throw new Error('AI response missing required score: location');
+      }
+      if (condition === undefined) {
+        throw new Error('AI response missing required score: condition/renovationPotential');
+      }
+      if (marketTiming === undefined) {
+        throw new Error('AI response missing required score: marketTiming/ownerMotivation');
+      }
+      if (overall === undefined) {
+        throw new Error('AI response missing required score: overall');
+      }
+      
       return {
         scores: {
-          investment: this.clampScore(scores.leadQuality || scores.investment),
-          location: this.clampScore(scores.location || 50),
-          condition: this.clampScore(scores.renovationPotential || scores.condition),
-          marketTiming: this.clampScore(scores.ownerMotivation || scores.marketTiming),
-          overall: this.clampScore(scores.overall),
+          investment: this.clampScore(investment),
+          location: this.clampScore(location),
+          condition: this.clampScore(condition),
+          marketTiming: this.clampScore(marketTiming),
+          overall: this.clampScore(overall),
         },
         details: {
           bedrooms: parsed.propertyDetails?.bedrooms || parsed.details?.bedrooms || undefined,
