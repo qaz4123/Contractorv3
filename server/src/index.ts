@@ -1,0 +1,198 @@
+/**
+ * Contractorv3 - Server Entry Point
+ * Clean, modular architecture with AI-powered lead intelligence
+ */
+
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
+import bcrypt from 'bcryptjs';
+import routes from './routes';
+import { notFoundHandler, errorHandler } from './middleware/errorHandler';
+import prisma from './lib/prisma';
+
+// Environment validation
+const requiredEnvVars = ['DATABASE_URL'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+  console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
+  process.exit(1);
+}
+
+// Database connection state
+let dbConnected = false;
+
+// Demo user credentials
+const DEMO_USER = {
+  email: 'demo@contractorcrm.com',
+  password: 'Demo123!',
+  name: 'Demo Contractor',
+};
+
+/**
+ * Create demo user if doesn't exist
+ * Only runs in development or when AUTH_DISABLED=true
+ */
+async function createDemoUser() {
+  // Only create demo user in development
+  if (process.env.NODE_ENV === 'production' && process.env.AUTH_DISABLED !== 'true') {
+    return;
+  }
+
+  try {
+    const existing = await prisma.user.findUnique({
+      where: { email: DEMO_USER.email },
+    });
+    
+    if (!existing) {
+      const passwordHash = await bcrypt.hash(DEMO_USER.password, 10);
+      await prisma.user.create({
+        data: {
+          email: DEMO_USER.email,
+          passwordHash,
+          name: DEMO_USER.name,
+          company: 'Demo Construction LLC',
+          role: 'CONTRACTOR',
+        },
+      });
+      console.log('✅ Demo user created: demo@contractorcrm.com / Demo123!');
+    } else {
+      console.log('ℹ️  Demo user already exists');
+    }
+  } catch (error) {
+    console.warn('⚠️  Could not create demo user:', (error as Error).message);
+  }
+}
+
+// Create Express app
+const app = express();
+
+// Trust proxy for Cloud Run (needed for rate limiting)
+app.set('trust proxy', 1);
+
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: false, // Disabled for SPA
+  crossOriginEmbedderPolicy: false,
+}));
+
+// Compression for faster responses
+app.use(compression());
+
+// CORS
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || '*',
+  credentials: true,
+}));
+
+// Body parsing
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// Request logging
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`${req.method} ${req.path} ${res.statusCode} ${duration}ms`);
+  });
+  next();
+});
+
+// Root health check (for Cloud Run)
+app.get('/health', (req, res) => {
+  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+});
+
+// API routes
+app.use('/api', routes);
+
+// Serve static files (both dev and production)
+const staticPath = process.env.NODE_ENV === 'production' ? 'public' : '../client/dist';
+app.use(express.static(staticPath));
+
+// SPA fallback
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile('index.html', { root: staticPath });
+});
+
+// Error handlers
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+// Start server
+const PORT = parseInt(process.env.PORT || '8080', 10);
+
+async function main() {
+  try {
+    // Start server FIRST (for Cloud Run health checks)
+    const server = app.listen(PORT, '0.0.0.0', () => {
+      console.log(`
+🏠 Property Analyzer V2
+━━━━━━━━━━━━━━━━━━━━━━━
+🚀 Server running on port ${PORT}
+📊 Environment: ${process.env.NODE_ENV || 'development'}
+      `);
+    });
+
+    // Then connect to database in background (with timeout)
+    try {
+      await Promise.race([
+        prisma.$connect(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), 10000))
+      ]);
+      dbConnected = true;
+      console.log('✅ Database connected');
+      
+      // Create demo user if doesn't exist
+      await createDemoUser();
+    } catch (dbError) {
+      console.warn('⚠️ Database connection failed:', (dbError as Error).message);
+      console.warn('⚠️ Running without database persistence');
+    }
+
+    // Check required environment variables
+    const requiredVars = ['DATABASE_URL'];
+    const missing = requiredVars.filter((v) => !process.env[v]);
+    if (missing.length > 0) {
+      console.warn(`⚠️ Missing environment variables: ${missing.join(', ')}`);
+    }
+
+    // Check optional API keys
+    if (!process.env.TAVILY_API_KEY) {
+      console.warn('⚠️ TAVILY_API_KEY not set - property search will not work');
+    }
+    if (!process.env.GEMINI_API_KEY) {
+      console.warn('⚠️ GEMINI_API_KEY not set - AI analysis will not work');
+    }
+
+    console.log(`
+🔌 Database: ${dbConnected ? 'Connected' : 'Not connected (running without persistence)'}
+🔍 Search: ${process.env.TAVILY_API_KEY ? 'Configured' : 'Not configured'}
+🤖 AI: ${process.env.GEMINI_API_KEY ? 'Configured' : 'Not configured'}
+    `);
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down...');
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  console.log('SIGINT received, shutting down...');
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
+main();

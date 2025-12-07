@@ -1,0 +1,1233 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===========================================
+// USERS & AUTHENTICATION
+// ===========================================
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  phone        String?
+  company      String?
+  role         UserRole @default(CONTRACTOR)
+  avatar       String?
+
+  // Subscription
+  subscriptionTier   SubscriptionTier @default(FREE)
+  subscriptionEndsAt DateTime?        @map("subscription_ends_at")
+
+  // Settings
+  emailNotifications Boolean @default(true) @map("email_notifications")
+  smsNotifications   Boolean @default(true) @map("sms_notifications")
+  timezone           String  @default("America/New_York")
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  lastLoginAt DateTime? @map("last_login_at")
+
+  // Relations
+  leads              Lead[]
+  projects           Project[]
+  tasks              Task[]
+  quotes             Quote[]
+  invoices           Invoice[]
+  refreshTokens      RefreshToken[]
+  notifications      Notification[]
+  subcontractorHires SubcontractorHire[]  @relation("HiredBy")
+  Note               Note[]
+  UsageTracking      UsageTracking[]
+  UpsellTrigger      UpsellTrigger[]
+  PaymentTransaction PaymentTransaction[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+enum UserRole {
+  CONTRACTOR
+  SUBCONTRACTOR
+  CLIENT
+  ADMIN
+}
+
+enum SubscriptionTier {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+// ===========================================
+// ORGANIZATIONS (Enterprise Multi-User)
+// ===========================================
+
+model Organization {
+  id      String @id @default(uuid())
+  name    String
+  slug    String @unique
+  ownerId String @map("owner_id")
+
+  // Subscription at org level for Enterprise
+  subscriptionTier   SubscriptionTier @default(ENTERPRISE)
+  subscriptionEndsAt DateTime?        @map("subscription_ends_at")
+  maxUsers           Int              @default(10) @map("max_users")
+
+  // Settings
+  logo    String?
+  website String?
+  phone   String?
+  address String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  members OrganizationMember[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             String        @id @default(uuid())
+  organizationId String        @map("organization_id")
+  userId         String        @map("user_id")
+  role           OrgMemberRole @default(MEMBER)
+  joinedAt       DateTime      @default(now()) @map("joined_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@map("organization_members")
+}
+
+enum OrgMemberRole {
+  OWNER
+  ADMIN
+  MANAGER
+  MEMBER
+}
+
+// ===========================================
+// LEADS & LEAD INTELLIGENCE
+// ===========================================
+
+model Lead {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+
+  // Contact Info
+  name  String
+  email String?
+  phone String?
+
+  // Property Address
+  street      String
+  city        String
+  state       String
+  zipCode     String @map("zip_code")
+  fullAddress String @map("full_address")
+
+  // Lead Status
+  status LeadStatus @default(NEW)
+  source String?
+
+  // Lead Intelligence Scores (0-100)
+  leadScore           Int? @map("lead_score")
+  renovationPotential Int? @map("renovation_potential")
+  ownerMotivation     Int? @map("owner_motivation")
+  profitPotential     Int? @map("profit_potential")
+
+  // Property Intelligence (from AI)
+  propertyIntel  Json? @map("property_intel")
+  ownerIntel     Json? @map("owner_intel")
+  financialIntel Json? @map("financial_intel")
+  permitHistory  Json? @map("permit_history")
+  renovationOpps Json? @map("renovation_opps")
+  salesApproach  Json? @map("sales_approach")
+
+  aiSummary  String?   @map("ai_summary") @db.Text
+  analyzedAt DateTime? @map("analyzed_at")
+
+  notes         String?   @db.Text
+  nextFollowUp  DateTime? @map("next_follow_up")
+  lastContactAt DateTime? @map("last_contact_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project?
+  tasks   Task[]
+  quotes  Quote[]
+  Note    Note[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([leadScore])
+  @@map("leads")
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL_SENT
+  NEGOTIATION
+  WON
+  LOST
+}
+
+// ===========================================
+// PROJECTS
+// ===========================================
+
+model Project {
+  id     String  @id @default(uuid())
+  userId String  @map("user_id")
+  leadId String? @unique @map("lead_id")
+
+  name        String
+  description String? @db.Text
+
+  street  String
+  city    String
+  state   String
+  zipCode String @map("zip_code")
+
+  status        ProjectStatus @default(PLANNING)
+  startDate     DateTime?     @map("start_date")
+  endDate       DateTime?     @map("end_date")
+  estimatedDays Int?          @map("estimated_days")
+
+  estimatedBudget Float? @map("estimated_budget")
+  actualCost      Float  @default(0) @map("actual_cost")
+
+  // Client Portal
+  portalEnabled Boolean @default(false) @map("portal_enabled")
+  portalToken   String? @unique @map("portal_token")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lead               Lead?               @relation(fields: [leadId], references: [id])
+  milestones         Milestone[]
+  photos             ProjectPhoto[]
+  tasks              Task[]
+  quotes             Quote[]
+  invoices           Invoice[]
+  materials          MaterialOrder[]
+  subcontractorHires SubcontractorHire[]
+  Note               Note[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("projects")
+}
+
+enum ProjectStatus {
+  PLANNING
+  APPROVED
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+model Milestone {
+  id          String          @id @default(uuid())
+  projectId   String          @map("project_id")
+  name        String
+  description String?
+  dueDate     DateTime?       @map("due_date")
+  status      MilestoneStatus @default(PENDING)
+  orderNum    Int             @default(0) @map("order_num")
+  completedAt DateTime?       @map("completed_at")
+  createdAt   DateTime        @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("milestones")
+}
+
+enum MilestoneStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+model ProjectPhoto {
+  id        String   @id @default(uuid())
+  projectId String   @map("project_id")
+  url       String
+  caption   String?
+  takenAt   DateTime @default(now()) @map("taken_at")
+  isPublic  Boolean  @default(true) @map("is_public")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_photos")
+}
+
+// ===========================================
+// TASKS & REMINDERS
+// ===========================================
+
+model Task {
+  id        String  @id @default(uuid())
+  userId    String  @map("user_id")
+  leadId    String? @map("lead_id")
+  projectId String? @map("project_id")
+
+  title       String
+  description String?      @db.Text
+  dueDate     DateTime?    @map("due_date")
+  priority    TaskPriority @default(MEDIUM)
+  status      TaskStatus   @default(PENDING)
+
+  reminderAt   DateTime?     @map("reminder_at")
+  reminderSent Boolean       @default(false) @map("reminder_sent")
+  reminderType ReminderType? @map("reminder_type")
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  completedAt DateTime? @map("completed_at")
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lead    Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  Note    Note[]
+
+  @@index([userId])
+  @@index([dueDate])
+  @@index([reminderAt])
+  @@map("tasks")
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ReminderType {
+  EMAIL
+  SMS
+  BOTH
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String           @map("user_id")
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+  data      Json?
+  read      Boolean          @default(false)
+  sentVia   String[]
+  createdAt DateTime         @default(now()) @map("created_at")
+  readAt    DateTime?        @map("read_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  TASK_REMINDER
+  LEAD_UPDATE
+  PROJECT_UPDATE
+  PAYMENT_RECEIVED
+  QUOTE_ACCEPTED
+  SYSTEM
+}
+
+// ===========================================
+// QUOTES
+// ===========================================
+
+model Quote {
+  id        String  @id @default(uuid())
+  userId    String  @map("user_id")
+  leadId    String? @map("lead_id")
+  projectId String? @map("project_id")
+
+  title       String
+  description String?     @db.Text
+  status      QuoteStatus @default(DRAFT)
+
+  lineItems Json  @map("line_items")
+  subtotal  Float
+  tax       Float @default(0)
+  discount  Float @default(0)
+  total     Float
+
+  sourceType QuoteSourceType @default(MANUAL) @map("source_type")
+  sourceData Json?           @map("source_data")
+
+  validUntil DateTime? @map("valid_until")
+  acceptedAt DateTime? @map("accepted_at")
+  rejectedAt DateTime? @map("rejected_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lead    Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  invoice Invoice?
+  Note    Note[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("quotes")
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  VIEWED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum QuoteSourceType {
+  MANUAL
+  IMAGE_AI
+  VOICE_AI
+  TEMPLATE
+}
+
+// ===========================================
+// INVOICES & PAYMENTS
+// ===========================================
+
+model Invoice {
+  id        String  @id @default(uuid())
+  userId    String  @map("user_id")
+  projectId String? @map("project_id")
+  quoteId   String? @unique @map("quote_id")
+
+  invoiceNumber String @unique @map("invoice_number")
+
+  clientName    String  @map("client_name")
+  clientEmail   String? @map("client_email")
+  clientPhone   String? @map("client_phone")
+  clientAddress String? @map("client_address")
+
+  lineItems  Json  @map("line_items")
+  subtotal   Float
+  tax        Float @default(0)
+  discount   Float @default(0)
+  total      Float
+  amountPaid Float @default(0) @map("amount_paid")
+
+  status  InvoiceStatus @default(DRAFT)
+  dueDate DateTime?     @map("due_date")
+  paidAt  DateTime?     @map("paid_at")
+  pdfUrl  String?       @map("pdf_url")
+  notes   String?       @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project  Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  quote    Quote?    @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  payments Payment[]
+  Note     Note[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("invoices")
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  VIEWED
+  PAID
+  PARTIAL
+  OVERDUE
+  CANCELLED
+}
+
+model Payment {
+  id        String        @id @default(uuid())
+  invoiceId String        @map("invoice_id")
+  amount    Float
+  method    PaymentMethod
+  reference String?
+  notes     String?
+  paidAt    DateTime      @default(now()) @map("paid_at")
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+enum PaymentMethod {
+  CASH
+  CHECK
+  CREDIT_CARD
+  BANK_TRANSFER
+  VENMO
+  ZELLE
+  OTHER
+}
+
+// ===========================================
+// MATERIALS & SUPPLIERS
+// ===========================================
+
+// Material Suppliers with GPS location for distance-based ordering
+model MaterialSupplier {
+  id      String  @id @default(uuid())
+  name    String
+  email   String?
+  phone   String?
+  website String?
+
+  // Address & Location
+  street  String?
+  city    String
+  state   String
+  zipCode String? @map("zip_code")
+
+  // GPS Location for distance calculation
+  latitude  Float?
+  longitude Float?
+
+  // Business Info
+  categories String[] // e.g., ["Lumber", "Plumbing", "Electrical", "Hardware"]
+  brands     String[] // Brands they carry
+
+  // Service Area - which regions this supplier serves
+  serviceAreaType  ServiceAreaType @default(RADIUS) @map("service_area_type")
+  deliveryRadius   Int?            @map("delivery_radius") // Miles (for RADIUS type)
+  serviceStates    String[]        @map("service_states") // States served (for STATES type)
+  serviceZipCodes  String[]        @map("service_zip_codes") // ZIP codes served (for ZIPCODES type)
+  serviceCounties  String[]        @map("service_counties") // Counties served (for COUNTIES type)
+  excludedZipCodes String[]        @map("excluded_zip_codes") // ZIP codes NOT served
+
+  // Delivery Options
+  offersDelivery      Boolean @default(true) @map("offers_delivery")
+  offersPickup        Boolean @default(true) @map("offers_pickup")
+  offersWillCall      Boolean @default(true) @map("offers_will_call") // Reserve and pick up
+  freeDeliveryMin     Float?  @map("free_delivery_min") // Minimum for free delivery
+  deliveryFee         Float?  @map("delivery_fee") // Flat fee
+  deliveryPerMile     Float?  @map("delivery_per_mile") // Fee per mile
+  minDeliveryFee      Float?  @map("min_delivery_fee") // Minimum delivery charge
+  maxDeliveryDistance Float?  @map("max_delivery_distance") // Max miles for delivery
+
+  // Same-day & Express options
+  sameDayAvailable Boolean @default(false) @map("same_day_available")
+  sameDayCutoff    String? @map("same_day_cutoff") // e.g., "2:00 PM"
+  sameDayFee       Float?  @map("same_day_fee")
+  expressAvailable Boolean @default(false) @map("express_available")
+  expressFee       Float?  @map("express_fee")
+
+  // Business hours (JSON with day: {open, close})
+  businessHours   Json? @map("business_hours")
+  holidaySchedule Json? @map("holiday_schedule") // Special holiday hours
+
+  // Ratings
+  rating      Float @default(0)
+  reviewCount Int   @default(0) @map("review_count")
+
+  // Contractor discounts
+  contractorDiscount Float?  @map("contractor_discount") // Percentage
+  requiresAccount    Boolean @default(false) @map("requires_account")
+
+  // Payment options
+  acceptsCredit  Boolean @default(true) @map("accepts_credit")
+  acceptsCheck   Boolean @default(true) @map("accepts_check")
+  net30Available Boolean @default(false) @map("net30_available")
+
+  verified Boolean @default(false)
+  active   Boolean @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  orders       MaterialOrder[]
+  serviceAreas SupplierServiceArea[]
+
+  @@index([city, state])
+  @@index([latitude, longitude])
+  @@index([categories])
+  @@index([serviceStates])
+  @@index([active, offersDelivery])
+  @@map("material_suppliers")
+}
+
+// Detailed service area polygons for complex delivery zones
+model SupplierServiceArea {
+  id         String @id @default(uuid())
+  supplierId String @map("supplier_id")
+  name       String // e.g., "Metro NYC", "North Jersey"
+
+  // Define the area
+  zipCodes String[] // ZIP codes in this zone
+  counties String[] // County names
+
+  // Zone-specific pricing
+  deliveryFee     Float? @map("delivery_fee")
+  deliveryPerMile Float? @map("delivery_per_mile")
+  freeDeliveryMin Float? @map("free_delivery_min")
+  minOrder        Float? @map("min_order")
+
+  // Delivery times for this zone
+  leadTimeDays     Int     @default(1) @map("lead_time_days")
+  sameDayAvailable Boolean @default(false) @map("same_day_available")
+
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  supplier MaterialSupplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([supplierId])
+  @@index([zipCodes])
+  @@map("supplier_service_areas")
+}
+
+model MaterialOrder {
+  id           String  @id @default(uuid())
+  projectId    String  @map("project_id")
+  supplierId   String? @map("supplier_id")
+  supplierName String  @map("supplier_name") // Denormalized for orders without supplier record
+
+  items    Json // Array of {name, quantity, unit, unitPrice, total}
+  subtotal Float
+  tax      Float @default(0)
+  shipping Float @default(0)
+  total    Float
+
+  // Delivery Location (from project or custom)
+  deliveryStreet    String? @map("delivery_street")
+  deliveryCity      String? @map("delivery_city")
+  deliveryState     String? @map("delivery_state")
+  deliveryZipCode   String? @map("delivery_zip_code")
+  deliveryLatitude  Float?  @map("delivery_latitude")
+  deliveryLongitude Float?  @map("delivery_longitude")
+
+  // Distance & Delivery Info
+  distanceToSupplier Float?       @map("distance_to_supplier") // Miles
+  deliveryType       DeliveryType @default(DELIVERY) @map("delivery_type")
+  deliveryDate       DateTime?    @map("delivery_date")
+  deliveryWindow     String?      @map("delivery_window") // e.g., "9AM-12PM"
+  deliveryNotes      String?      @map("delivery_notes")
+
+  status         MaterialOrderStatus @default(PENDING)
+  orderedAt      DateTime?           @map("ordered_at")
+  shippedAt      DateTime?           @map("shipped_at")
+  deliveredAt    DateTime?           @map("delivered_at")
+  trackingNumber String?             @map("tracking_number")
+
+  // Payment
+  paymentMethod PaymentMethod? @map("payment_method")
+  paymentStatus PaymentStatus  @default(UNPAID) @map("payment_status")
+  paidAt        DateTime?      @map("paid_at")
+  invoiceNumber String?        @map("invoice_number")
+
+  notes String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  project  Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  supplier MaterialSupplier? @relation(fields: [supplierId], references: [id])
+
+  @@index([projectId])
+  @@index([supplierId])
+  @@index([status])
+  @@map("material_orders")
+}
+
+enum DeliveryType {
+  PICKUP // Contractor picks up
+  DELIVERY // Supplier delivers
+  WILL_CALL // Reserved for pickup
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING
+  PROCESSING
+  PAID
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+// How supplier defines their service area
+enum ServiceAreaType {
+  RADIUS // Serves within X miles of location
+  STATES // Serves specific states
+  ZIPCODES // Serves specific ZIP codes
+  COUNTIES // Serves specific counties
+  NATIONWIDE // Serves entire US
+  CUSTOM // Custom polygon/region
+}
+
+enum MaterialOrderStatus {
+  DRAFT
+  PENDING
+  CONFIRMED
+  PROCESSING
+  READY_FOR_PICKUP
+  SHIPPED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+// ===========================================
+// SUBCONTRACTOR MARKETPLACE
+// ===========================================
+
+model Subcontractor {
+  id             String   @id @default(uuid())
+  userId         String?  @unique @map("user_id") // Link to User if they are a platform user
+  name           String
+  email          String   @unique
+  phone          String?
+  company        String?
+  trades         String[] // e.g., ["Plumbing", "HVAC", "Electrical"]
+  specialization String? // Primary specialty
+  bio            String?  @db.Text
+  city           String
+  state          String
+  zipCode        String?  @map("zip_code")
+
+  // GPS Location for distance-based search
+  latitude          Float?
+  longitude         Float?
+  locationUpdatedAt DateTime? @map("location_updated_at")
+
+  serviceRadius   Int       @default(25) @map("service_radius") // Miles
+  rating          Float     @default(0)
+  reviewCount     Int       @default(0) @map("review_count")
+  completedJobs   Int       @default(0) @map("completed_jobs")
+  available       Boolean   @default(true)
+  hourlyRate      Float?    @map("hourly_rate")
+  dailyRate       Float?    @map("daily_rate")
+  verified        Boolean   @default(false)
+  licenseNumber   String?   @map("license_number")
+  insurance       Boolean   @default(false)
+  insuranceExpiry DateTime? @map("insurance_expiry")
+  portfolio       String[] // URLs to portfolio images
+
+  // Premium Features - paid subcontractors appear at top
+  isPremium        Boolean      @default(false) @map("is_premium")
+  premiumTier      PremiumTier? @map("premium_tier")
+  premiumExpiresAt DateTime?    @map("premium_expires_at")
+  featuredUntil    DateTime?    @map("featured_until") // Boosted listing
+
+  // Availability settings
+  availableFrom     DateTime? @map("available_from")
+  preferredJobTypes String[]  @map("preferred_job_types")
+
+  // Response metrics
+  avgResponseTime Int?   @map("avg_response_time") // Minutes
+  responseRate    Float? @map("response_rate") // Percentage
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  hires           SubcontractorHire[]
+  reviews         SubcontractorReview[]
+  jobApplications JobApplication[]
+
+  @@index([city, state])
+  @@index([trades])
+  @@index([available])
+  @@index([latitude, longitude])
+  @@index([isPremium, rating])
+  @@map("subcontractors")
+}
+
+enum PremiumTier {
+  BASIC // Appear slightly higher
+  PLUS // Priority in search + badge
+  ELITE // Top of search + featured + badge
+}
+
+// Job postings by contractors looking for subcontractors
+model JobPosting {
+  id        String  @id @default(uuid())
+  userId    String  @map("user_id") // The contractor posting the job
+  projectId String? @map("project_id")
+
+  title        String
+  description  String   @db.Text
+  tradesNeeded String[] @map("trades_needed")
+  city         String
+  state        String
+  zipCode      String?  @map("zip_code")
+
+  // GPS Location for the job
+  latitude  Float?
+  longitude Float?
+
+  budgetMin Float?   @map("budget_min")
+  budgetMax Float?   @map("budget_max")
+  rateType  RateType @default(PROJECT) @map("rate_type")
+
+  startDate DateTime?  @map("start_date")
+  endDate   DateTime?  @map("end_date")
+  urgency   JobUrgency @default(NORMAL)
+
+  status JobPostingStatus @default(OPEN)
+
+  // Referral Commission - incentive for contractors who refer jobs
+  referralCommission Float   @default(0.05) @map("referral_commission") // 5% default
+  referrerId         String? @map("referrer_id") // User who referred this job
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  expiresAt DateTime? @map("expires_at")
+
+  applications JobApplication[]
+
+  @@index([city, state])
+  @@index([latitude, longitude])
+  @@index([status])
+  @@index([tradesNeeded])
+  @@map("job_postings")
+}
+
+model JobApplication {
+  id              String @id @default(uuid())
+  jobPostingId    String @map("job_posting_id")
+  subcontractorId String @map("subcontractor_id")
+
+  coverLetter   String? @map("cover_letter") @db.Text
+  proposedRate  Float?  @map("proposed_rate")
+  estimatedDays Int?    @map("estimated_days")
+  availability  String? // When they can start
+
+  status ApplicationStatus @default(PENDING)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  jobPosting    JobPosting    @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+  subcontractor Subcontractor @relation(fields: [subcontractorId], references: [id], onDelete: Cascade)
+
+  @@unique([jobPostingId, subcontractorId])
+  @@map("job_applications")
+}
+
+enum RateType {
+  HOURLY
+  DAILY
+  PROJECT
+}
+
+enum JobUrgency {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum JobPostingStatus {
+  DRAFT
+  OPEN
+  FILLED
+  CANCELLED
+  EXPIRED
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWED
+  SHORTLISTED
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+model SubcontractorHire {
+  id              String     @id @default(uuid())
+  subcontractorId String     @map("subcontractor_id")
+  contractorId    String     @map("contractor_id")
+  projectId       String?    @map("project_id")
+  description     String     @db.Text
+  agreedRate      Float      @map("agreed_rate")
+  rateType        String
+  status          HireStatus @default(PENDING)
+  commissionRate  Float      @default(0.05) @map("commission_rate")
+  commissionPaid  Boolean    @default(false) @map("commission_paid")
+  startDate       DateTime?  @map("start_date")
+  endDate         DateTime?  @map("end_date")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  subcontractor Subcontractor @relation(fields: [subcontractorId], references: [id])
+  contractor    User          @relation("HiredBy", fields: [contractorId], references: [id])
+  project       Project?      @relation(fields: [projectId], references: [id])
+
+  @@index([subcontractorId])
+  @@index([contractorId])
+  @@map("subcontractor_hires")
+}
+
+enum HireStatus {
+  PENDING
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
+// Referral Commission Tracking - when contractors pass jobs to each other
+model ReferralCommission {
+  id           String  @id @default(uuid())
+  referrerId   String  @map("referrer_id") // User who referred the job
+  refereeId    String  @map("referee_id") // Subcontractor who got the job
+  hireId       String? @map("hire_id")
+  jobPostingId String? @map("job_posting_id")
+
+  jobValue         Float @map("job_value") // Total value of the job
+  commissionRate   Float @map("commission_rate") // e.g., 0.05 for 5%
+  commissionAmount Float @map("commission_amount")
+
+  status CommissionStatus @default(PENDING)
+  paidAt DateTime?        @map("paid_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([referrerId])
+  @@index([status])
+  @@map("referral_commissions")
+}
+
+enum CommissionStatus {
+  PENDING // Job not yet completed
+  APPROVED // Job completed, commission approved
+  PAID // Commission paid out
+  CANCELLED // Job cancelled, no commission
+}
+
+model SubcontractorReview {
+  id              String   @id @default(uuid())
+  subcontractorId String   @map("subcontractor_id")
+  reviewerId      String   @map("reviewer_id")
+  rating          Int
+  comment         String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  subcontractor Subcontractor @relation(fields: [subcontractorId], references: [id], onDelete: Cascade)
+
+  @@unique([subcontractorId, reviewerId])
+  @@map("subcontractor_reviews")
+}
+
+// ===========================================
+// FINANCING
+// ===========================================
+
+model FinancingOffer {
+  id               String          @id @default(uuid())
+  leadId           String?         @map("lead_id")
+  projectId        String?         @map("project_id")
+  lenderName       String          @map("lender_name")
+  lenderLogo       String?         @map("lender_logo")
+  amount           Float
+  interestRate     Float           @map("interest_rate")
+  termMonths       Int             @map("term_months")
+  monthlyPayment   Float           @map("monthly_payment")
+  status           FinancingStatus @default(OFFERED)
+  commissionRate   Float           @default(0.02) @map("commission_rate")
+  commissionAmount Float?          @map("commission_amount")
+  commissionPaid   Boolean         @default(false) @map("commission_paid")
+  offeredAt        DateTime        @default(now()) @map("offered_at")
+  acceptedAt       DateTime?       @map("accepted_at")
+  fundedAt         DateTime?       @map("funded_at")
+  createdAt        DateTime        @default(now()) @map("created_at")
+
+  @@index([leadId])
+  @@index([projectId])
+  @@map("financing_offers")
+}
+
+enum FinancingStatus {
+  OFFERED
+  APPLIED
+  APPROVED
+  FUNDED
+  DECLINED
+  EXPIRED
+}
+
+// ===========================================
+// ANALYTICS (for Admin)
+// ===========================================
+
+model AnalyticsEvent {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  eventType String   @map("event_type")
+  eventData Json?    @map("event_data")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("analytics_events")
+}
+
+model PlatformStats {
+  id                    String   @id @default(uuid())
+  date                  DateTime @unique @db.Date
+  totalUsers            Int      @default(0) @map("total_users")
+  activeUsers           Int      @default(0) @map("active_users")
+  newUsers              Int      @default(0) @map("new_users")
+  totalLeads            Int      @default(0) @map("total_leads")
+  totalProjects         Int      @default(0) @map("total_projects")
+  totalQuotes           Int      @default(0) @map("total_quotes")
+  totalInvoiced         Float    @default(0) @map("total_invoiced")
+  subscriptionRevenue   Float    @default(0) @map("subscription_revenue")
+  marketplaceCommission Float    @default(0) @map("marketplace_commission")
+  financingCommission   Float    @default(0) @map("financing_commission")
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  @@map("platform_stats")
+}
+
+// ===========================================
+// CACHE
+// ===========================================
+
+model AnalysisCache {
+  id        String    @id @default(uuid())
+  cacheKey  String    @unique @map("cache_key")
+  address   String
+  data      Json
+  hitCount  Int       @default(0) @map("hit_count")
+  createdAt DateTime  @default(now()) @map("created_at")
+  expiresAt DateTime  @map("expires_at")
+  lastHitAt DateTime? @map("last_hit_at")
+
+  @@index([cacheKey])
+  @@index([expiresAt])
+  @@map("analysis_cache")
+}
+
+// ===========================================
+// NOTES & COMMUNICATIONS (Connected to Projects)
+// ===========================================
+
+model Note {
+  id        String @id @default(uuid())
+  userId    String @map("user_id")
+  projectId String @map("project_id")
+
+  // Optional associations
+  leadId    String? @map("lead_id")
+  taskId    String? @map("task_id")
+  quoteId   String? @map("quote_id")
+  invoiceId String? @map("invoice_id")
+
+  title    String?
+  content  String  @db.Text
+  isPinned Boolean @default(false) @map("is_pinned")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  lead    Lead?    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  task    Task?    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  quote   Quote?   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  invoice Invoice? @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([userId])
+  @@index([leadId])
+  @@map("notes")
+}
+
+// ===========================================
+// USAGE TRACKING & COST ATTRIBUTION
+// ===========================================
+
+model UsageTracking {
+  id     String   @id @default(uuid())
+  userId String   @map("user_id")
+  date   DateTime @db.Date
+
+  // AI Usage
+  aiApiCalls   Int   @default(0) @map("ai_api_calls")
+  aiTokensUsed Int   @default(0) @map("ai_tokens_used")
+  aiCostUsd    Float @default(0) @map("ai_cost_usd")
+
+  // Feature Usage
+  leadsAnalyzed   Int @default(0) @map("leads_analyzed")
+  quotesGenerated Int @default(0) @map("quotes_generated")
+  invoicesSent    Int @default(0) @map("invoices_sent")
+
+  // Storage (in MB)
+  storageUsedMb  Float @default(0) @map("storage_used_mb")
+  storageCostUsd Float @default(0) @map("storage_cost_usd")
+
+  // Total Daily Cost
+  totalCostUsd Float @default(0) @map("total_cost_usd")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([date])
+  @@map("usage_tracking")
+}
+
+// ===========================================
+// FEATURE LIMITS BY SUBSCRIPTION TIER
+// ===========================================
+
+model FeatureLimit {
+  id   String           @id @default(uuid())
+  tier SubscriptionTier @unique
+
+  // Project Limits
+  maxProjects     Int   @default(-1) @map("max_projects") // -1 = unlimited
+  maxProjectValue Float @default(-1) @map("max_project_value")
+
+  // Lead Limits
+  maxLeadsPerMonth      Int @default(-1) @map("max_leads_per_month")
+  maxAiAnalysesPerMonth Int @default(-1) @map("max_ai_analyses_per_month")
+
+  // Document Limits
+  maxQuotesPerMonth   Int @default(-1) @map("max_quotes_per_month")
+  maxInvoicesPerMonth Int @default(-1) @map("max_invoices_per_month")
+
+  // Storage Limits (MB)
+  maxStorageMb Float @default(-1) @map("max_storage_mb")
+
+  // Feature Access
+  hasAiAnalysis      Boolean @default(false) @map("has_ai_analysis")
+  hasClientPortal    Boolean @default(false) @map("has_client_portal")
+  hasMarketplace     Boolean @default(false) @map("has_marketplace")
+  hasFinancing       Boolean @default(false) @map("has_financing")
+  hasAdvancedReports Boolean @default(false) @map("has_advanced_reports")
+  hasApiAccess       Boolean @default(false) @map("has_api_access")
+  hasPrioritySupport Boolean @default(false) @map("has_priority_support")
+
+  // Commission Settings
+  platformCommissionRate Float @default(0.05) @map("platform_commission_rate")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("feature_limits")
+}
+
+// ===========================================
+// UPSELL TRIGGERS & CONVERSION TRACKING
+// ===========================================
+
+model UpsellTrigger {
+  id              String           @id @default(uuid())
+  userId          String           @map("user_id")
+  triggerType     String           @map("trigger_type") // "LIMIT_REACHED", "FEATURE_LOCKED", etc.
+  featureName     String           @map("feature_name")
+  currentTier     SubscriptionTier @map("current_tier")
+  recommendedTier SubscriptionTier @map("recommended_tier")
+
+  shown       Boolean   @default(false)
+  shownAt     DateTime? @map("shown_at")
+  converted   Boolean   @default(false)
+  convertedAt DateTime? @map("converted_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([triggerType])
+  @@map("upsell_triggers")
+}
+
+// ===========================================
+// PAYMENT AUTOMATION
+// ===========================================
+
+model PaymentTransaction {
+  id       String        @id @default(uuid())
+  userId   String        @map("user_id")
+  type     PaymentType
+  amount   Float
+  currency String        @default("USD")
+  status   PaymentStatus @default(PENDING)
+
+  // Commission tracking
+  sourceType String? @map("source_type") // "SUBCONTRACTOR_HIRE", "FINANCING", "REFERRAL"
+  sourceId   String? @map("source_id")
+
+  // Payment processor
+  stripePaymentId String? @unique @map("stripe_payment_id")
+
+  description String? @db.Text
+  metadata    Json?
+
+  processedAt DateTime? @map("processed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@map("payment_transactions")
+}
+
+enum PaymentType {
+  SUBSCRIPTION
+  COMMISSION_EARNED
+  COMMISSION_PAID
+  MARKETPLACE_FEE
+  FINANCING_FEE
+}
