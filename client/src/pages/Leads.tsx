@@ -90,16 +90,33 @@ export function Leads() {
     },
     {
       key: 'score',
-      header: 'Score',
+      header: 'Lead Score',
       render: (lead: Lead) => (
-        <div className="flex items-center gap-1">
+        <div className="flex flex-col gap-1">
           {lead.overallScore ? (
             <>
-              <TrendingUp className="w-4 h-4 text-green-500" />
-              <span className="font-semibold text-green-600">{lead.overallScore}/100</span>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-green-500" />
+                <span className={`font-bold ${
+                  lead.overallScore >= 70 ? 'text-green-600' :
+                  lead.overallScore >= 50 ? 'text-yellow-600' :
+                  'text-red-600'
+                }`}>
+                  {lead.overallScore}
+                </span>
+                <span className="text-xs text-gray-400">/100</span>
+              </div>
+              {lead.overallScore >= 70 && (
+                <span className="text-xs text-green-600 font-medium">Hot Lead 🔥</span>
+              )}
+              {lead.overallScore < 40 && (
+                <span className="text-xs text-gray-500">Low Priority</span>
+              )}
             </>
           ) : (
-            <span className="text-gray-400 text-sm">Not analyzed</span>
+            <div className="flex items-center gap-1">
+              <span className="text-gray-400 text-sm">Not analyzed</span>
+            </div>
           )}
         </div>
       ),
