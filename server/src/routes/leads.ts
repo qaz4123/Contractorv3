@@ -254,6 +254,9 @@ router.post(
     // Parse address into components if not already provided
     const addressParts = street ? { street, city, state, zipCode } : parseAddress(addressString);
     
+    // Extract correlation ID once at the beginning
+    const correlationId = (req as any).correlationId || 'unknown';
+    
     // Check if lead already exists
     const existingLead = await prisma.lead.findFirst({
       where: {
@@ -264,7 +267,6 @@ router.post(
     });
 
     if (existingLead) {
-      const correlationId = (req as any).correlationId || 'unknown';
       res.status(400).json({
         success: false,
         error: 'Lead with this address already exists',
@@ -275,7 +277,6 @@ router.post(
     }
 
     // Generate AI intelligence
-    const correlationId = (req as any).correlationId || 'unknown';
     const logContext = {
       timestamp: new Date().toISOString(),
       severity: 'INFO',
@@ -379,8 +380,8 @@ function parseAddress(address: string): { street: string; city: string; state: s
   let city = (parts[1] || '').substring(0, 100);
   let stateZip = (parts[2] || '').substring(0, 50);
   
-  // Parse state and zip from "CA 90210" format
-  const stateZipMatch = stateZip.match(/([A-Z]{2})\s*(\d{5})?/i);
+  // Parse state and zip from "CA 90210" format (case-insensitive)
+  const stateZipMatch = stateZip.match(/([A-Za-z]{2})\s*(\d{5})?/);
   const state = stateZipMatch ? stateZipMatch[1].toUpperCase() : stateZip.substring(0, 2).toUpperCase();
   const zipCode = stateZipMatch ? stateZipMatch[2] || '' : '';
   
