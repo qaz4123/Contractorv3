@@ -4,6 +4,7 @@ export { Button } from './Button';
 export { Input, TextArea, Select } from './Form';
 export { Badge, ScoreBadge } from './Badge';
 export { DataQualityBadge } from './DataQualityBadge';
+export { Tooltip } from './Tooltip';
 export { Modal, ConfirmModal } from './Modal';
 export { LoadingSpinner, PageLoader, EmptyState } from './Loading';
 export { Table, Pagination } from './Table';

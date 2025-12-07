@@ -6,7 +6,7 @@ import {
   DollarSign, Calendar, RefreshCw, Edit, Trash2,
   Home, Hammer, FileText, CreditCard, AlertTriangle
 } from 'lucide-react';
-import { Button, Card, Badge, ScoreBadge, PageLoader, ConfirmModal } from '../components';
+import { Button, Card, Badge, ScoreBadge, PageLoader, ConfirmModal, Tooltip } from '../components';
 import { leadsService, quotesService, financingService } from '../services';
 import { formatCurrency, formatDate, formatDateTime } from '../utils/format';
 
@@ -304,6 +304,90 @@ export function LeadDetail() {
           )}
         </div>
       </Card>
+
+      {/* Lead Scores Overview - Only shown if analyzed */}
+      {typedLead.analyzedAt && (
+        <Card>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Lead Analysis Scores</h2>
+            {typedLead.analyzedAt && (
+              <span className="text-sm text-gray-500">
+                Last analyzed {formatDate(typedLead.analyzedAt)}
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {typedLead.leadScore !== undefined && (
+              <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="flex items-center gap-1 text-sm text-gray-500 mb-1">
+                  <span>Lead Quality</span>
+                  <Tooltip content="Overall quality considering owner info, contact details, and data completeness" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <ScoreBadge score={typedLead.leadScore} />
+                  <span className="text-xs text-gray-400">/100</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  {typedLead.leadScore >= 70 ? 'Excellent lead!' : 
+                   typedLead.leadScore >= 50 ? 'Good potential' : 
+                   'Low priority'}
+                </p>
+              </div>
+            )}
+            {typedLead.renovationPotential !== undefined && (
+              <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="flex items-center gap-1 text-sm text-gray-500 mb-1">
+                  <span>Renovation Need</span>
+                  <Tooltip content="Scope of renovation work needed based on property age, condition, and permit history" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <ScoreBadge score={typedLead.renovationPotential} />
+                  <span className="text-xs text-gray-400">/100</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  {typedLead.renovationPotential >= 70 ? 'Significant work needed' : 
+                   typedLead.renovationPotential >= 50 ? 'Moderate updates' : 
+                   'Minor work'}
+                </p>
+              </div>
+            )}
+            {typedLead.ownerMotivation !== undefined && (
+              <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="flex items-center gap-1 text-sm text-gray-500 mb-1">
+                  <span>Owner Motivation</span>
+                  <Tooltip content="Likelihood owner will invest in renovations based on business activity, permits, and financial indicators" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <ScoreBadge score={typedLead.ownerMotivation} />
+                  <span className="text-xs text-gray-400">/100</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  {typedLead.ownerMotivation >= 70 ? 'Highly motivated' : 
+                   typedLead.ownerMotivation >= 50 ? 'Moderately interested' : 
+                   'Less engaged'}
+                </p>
+              </div>
+            )}
+            {typedLead.profitPotential !== undefined && (
+              <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="flex items-center gap-1 text-sm text-gray-500 mb-1">
+                  <span>Profit Potential</span>
+                  <Tooltip content="Estimated profit margin based on property value, renovation scope, and market area" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <ScoreBadge score={typedLead.profitPotential} />
+                  <span className="text-xs text-gray-400">/100</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  {typedLead.profitPotential >= 70 ? 'High profit margin' : 
+                   typedLead.profitPotential >= 50 ? 'Good margin' : 
+                   'Lower margin'}
+                </p>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
