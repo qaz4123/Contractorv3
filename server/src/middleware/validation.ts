@@ -20,10 +20,12 @@ export function validateBody<T>(schema: ZodSchema<T>) {
           field: e.path.join('.'),
           message: e.message,
         }));
+        const correlationId = (req as any).correlationId || 'unknown';
         res.status(400).json({
           success: false,
           error: 'Validation error',
           details: messages,
+          correlationId,
         });
         return;
       }
@@ -46,10 +48,12 @@ export function validateQuery<T>(schema: ZodSchema<T>) {
           field: e.path.join('.'),
           message: e.message,
         }));
+        const correlationId = (req as any).correlationId || 'unknown';
         res.status(400).json({
           success: false,
           error: 'Invalid parameters',
           details: messages,
+          correlationId,
         });
         return;
       }
@@ -72,10 +76,12 @@ export function validateParams<T>(schema: ZodSchema<T>) {
           field: e.path.join('.'),
           message: e.message,
         }));
+        const correlationId = (req as any).correlationId || 'unknown';
         res.status(400).json({
           success: false,
           error: 'Invalid parameters',
           details: messages,
+          correlationId,
         });
         return;
       }

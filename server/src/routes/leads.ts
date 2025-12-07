@@ -254,6 +254,9 @@ router.post(
     // Parse address into components if not already provided
     const addressParts = street ? { street, city, state, zipCode } : parseAddress(addressString);
     
+    // Extract correlation ID once at the beginning
+    const correlationId = (req as any).correlationId || 'unknown';
+    
     // Check if lead already exists
     const existingLead = await prisma.lead.findFirst({
       where: {
@@ -267,18 +270,36 @@ router.post(
       res.status(400).json({
         success: false,
         error: 'Lead with this address already exists',
-        existingLeadId: existingLead.id
+        existingLeadId: existingLead.id,
+        correlationId,
       });
       return;
     }
 
     // Generate AI intelligence
-    console.log('Generating lead intelligence for:', address);
+    const logContext = {
+      timestamp: new Date().toISOString(),
+      severity: 'INFO',
+      correlationId,
+      message: 'Generating lead intelligence',
+      address: addressString,
+      userId: req.user!.userId,
+    };
+    console.log(JSON.stringify(logContext));
+    
     let intelligence;
     try {
-      intelligence = await leadIntelService.generateLeadIntelligence(address, req.user!.userId);
+      intelligence = await leadIntelService.generateLeadIntelligence(addressString, req.user!.userId);
     } catch (error) {
-      console.error('Failed to generate intelligence:', error);
+      const errorLog = {
+        timestamp: new Date().toISOString(),
+        severity: 'ERROR',
+        correlationId,
+        message: 'Failed to generate lead intelligence',
+        error: error instanceof Error ? error.message : String(error),
+        address: addressString,
+      };
+      console.error(JSON.stringify(errorLog));
       intelligence = null;
     }
 
@@ -343,18 +364,25 @@ router.post(
   })
 );
 
-// Helper to parse address string
+// Helper to parse address string with sanitization
 function parseAddress(address: string): { street: string; city: string; state: string; zipCode: string } {
+  // Sanitize input: remove excessive whitespace and potentially dangerous characters
+  const sanitized = address
+    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+    .replace(/[<>]/g, '') // Remove angle brackets
+    .trim()
+    .substring(0, 500); // Limit length
+  
   // Simple address parsing - in production you'd use a proper geocoding service
-  const parts = address.split(',').map(p => p.trim());
+  const parts = sanitized.split(',').map(p => p.trim());
   
-  let street = parts[0] || address;
-  let city = parts[1] || '';
-  let stateZip = parts[2] || '';
+  let street = (parts[0] || sanitized).substring(0, 200);
+  let city = (parts[1] || '').substring(0, 100);
+  let stateZip = (parts[2] || '').substring(0, 50);
   
-  // Parse state and zip from "CA 90210" format
-  const stateZipMatch = stateZip.match(/([A-Z]{2})\s*(\d{5})?/);
-  const state = stateZipMatch ? stateZipMatch[1] : stateZip;
+  // Parse state and zip from "CA 90210" format (case-insensitive)
+  const stateZipMatch = stateZip.match(/([A-Za-z]{2})\s*(\d{5})?/);
+  const state = stateZipMatch ? stateZipMatch[1].toUpperCase() : stateZip.substring(0, 2).toUpperCase();
   const zipCode = stateZipMatch ? stateZipMatch[2] || '' : '';
   
   return { street, city, state, zipCode };
@@ -598,55 +626,7 @@ router.post(
   })
 );
 
-/**
- * POST /api/leads/:id/convert-to-project
- * Convert lead to project
- */
-router.post(
-  '/:id/convert-to-project',
-  asyncHandler(async (req, res) => {
-    const { id } = req.params;
 
-    const lead = await prisma.lead.findFirst({
-      where: {
-        id,
-        userId: req.user!.userId,
-      },
-    });
-
-    if (!lead) {
-      res.status(404).json({
-        success: false,
-        error: 'Lead not found',
-      });
-      return;
-    }
-
-    // Create project from lead
-    const project = await prisma.project.create({
-      data: {
-        leadId: lead.id,
-        userId: req.user!.userId,
-        name: lead.fullAddress,
-        description: `Project converted from lead: ${lead.fullAddress}`,
-        street: lead.street,
-        city: lead.city,
-        state: lead.state,
-        zipCode: lead.zipCode,
-        status: 'PLANNING',
-        estimatedBudget: lead.profitPotential ? lead.profitPotential * 1000 : undefined,
-      },
-    });
-
-    // Update lead status to WON
-    await prisma.lead.update({
-      where: { id },
-      data: { status: LeadStatus.WON },
-    });
-
-    res.json(project);
-  })
-);
 
 /**
  * DELETE /api/leads/:id

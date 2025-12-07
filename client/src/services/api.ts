@@ -31,6 +31,18 @@ const api = axios.create({
   validateStatus: (status) => status < 500, // Don't throw on 4xx errors
 });
 
+// Retry configuration
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+
+// Helper function to check if error is retryable
+const isRetryableError = (error: AxiosError): boolean => {
+  if (!error.response) return true; // Network errors are retryable
+  const status = error.response.status;
+  // Retry on 5xx errors and 429 (rate limit)
+  return status >= 500 || status === 429;
+};
+
 // Flag to prevent multiple refresh attempts
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -49,20 +61,40 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-// Add auth token to requests
+// Add auth token and correlation ID to requests
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  // Add correlation ID for request tracing
+  const correlationId = `client-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+  config.headers['X-Correlation-ID'] = correlationId;
+  
+  // Add retry count metadata
+  (config as any).retryCount = (config as any).retryCount || 0;
+  
   return config;
 });
 
-// Handle auth errors with automatic token refresh
+// Handle auth errors with automatic token refresh and retry logic
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean; retryCount?: number };
+
+    // Retry logic for retryable errors
+    if (isRetryableError(error) && (originalRequest.retryCount || 0) < MAX_RETRIES) {
+      originalRequest.retryCount = (originalRequest.retryCount || 0) + 1;
+      
+      // Exponential backoff
+      const delay = RETRY_DELAY * Math.pow(2, originalRequest.retryCount - 1);
+      console.log(`Retrying request (attempt ${originalRequest.retryCount}/${MAX_RETRIES}) after ${delay}ms...`);
+      
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return api(originalRequest);
+    }
 
     // If error is 401 and we haven't tried to refresh yet
     if (error.response?.status === 401 && !originalRequest._retry) {

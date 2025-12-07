@@ -100,7 +100,27 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ): void {
-  console.error('Error:', err);
+  const correlationId = (req as any).correlationId || 'unknown';
+  
+  // Structured error logging for Cloud Logging
+  const errorLog = {
+    timestamp: new Date().toISOString(),
+    severity: 'ERROR',
+    correlationId,
+    error: {
+      message: err.message,
+      stack: err.stack,
+      statusCode: err.statusCode,
+      isOperational: err.isOperational,
+    },
+    httpRequest: {
+      requestMethod: req.method,
+      requestUrl: req.path,
+      userAgent: req.headers['user-agent'],
+      remoteIp: req.ip,
+    },
+  };
+  console.error(JSON.stringify(errorLog));
 
   // Zod validation errors
   if (err instanceof ZodError) {
@@ -114,6 +134,7 @@ export function errorHandler(
       success: false,
       error: 'Validation failed',
       details: formattedErrors,
+      correlationId,
     });
     return;
   }
@@ -123,6 +144,7 @@ export function errorHandler(
     const response: any = {
       success: false,
       error: err.message,
+      correlationId,
     };
     
     if (err.details) {
@@ -202,6 +224,7 @@ export function errorHandler(
   const response: any = {
     success: false,
     error: message,
+    correlationId,
   };
 
   // Include stack trace in development for debugging
