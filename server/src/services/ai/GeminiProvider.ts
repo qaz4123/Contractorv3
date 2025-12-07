@@ -79,7 +79,16 @@ export class GeminiProvider {
 
     if (key) {
       this.genAI = new GoogleGenerativeAI(key);
-      this.model = this.genAI.getGenerativeModel({ model: modelName });
+      // Configure model for deterministic output
+      this.model = this.genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          temperature: 0,  // Deterministic responses
+          topP: 1,
+          topK: 1,
+          maxOutputTokens: 8192,
+        },
+      });
     } else {
       console.warn('⚠️ Gemini API key not configured');
     }
@@ -224,16 +233,44 @@ SCORING GUIDELINES FOR CONTRACTORS:
       const parsed = JSON.parse(cleanText);
 
       // Handle new format with leadQuality, renovationPotential etc
-      const scores = parsed.scores || {};
+      const scores = parsed.scores;
       
-      // Validate and normalize the response
+      if (!scores) {
+        throw new Error('AI response missing required "scores" object');
+      }
+      
+      // Validate and normalize the response - no fallback values
+      // Use new format names or old format names, but require at least one
+      const investment = scores.leadQuality ?? scores.investment;
+      const location = scores.location;
+      const condition = scores.renovationPotential ?? scores.condition;
+      const marketTiming = scores.ownerMotivation ?? scores.marketTiming;
+      const overall = scores.overall;
+      
+      // Validate all required scores are present
+      if (investment === undefined) {
+        throw new Error('AI response missing required score: investment/leadQuality');
+      }
+      if (location === undefined) {
+        throw new Error('AI response missing required score: location');
+      }
+      if (condition === undefined) {
+        throw new Error('AI response missing required score: condition/renovationPotential');
+      }
+      if (marketTiming === undefined) {
+        throw new Error('AI response missing required score: marketTiming/ownerMotivation');
+      }
+      if (overall === undefined) {
+        throw new Error('AI response missing required score: overall');
+      }
+      
       return {
         scores: {
-          investment: this.clampScore(scores.leadQuality || scores.investment),
-          location: this.clampScore(scores.location || 50),
-          condition: this.clampScore(scores.renovationPotential || scores.condition),
-          marketTiming: this.clampScore(scores.ownerMotivation || scores.marketTiming),
-          overall: this.clampScore(scores.overall),
+          investment: this.clampScore(investment),
+          location: this.clampScore(location),
+          condition: this.clampScore(condition),
+          marketTiming: this.clampScore(marketTiming),
+          overall: this.clampScore(overall),
         },
         details: {
           bedrooms: parsed.propertyDetails?.bedrooms || parsed.details?.bedrooms || undefined,
@@ -276,44 +313,28 @@ SCORING GUIDELINES FOR CONTRACTORS:
       console.error('Failed to parse Gemini response:', error);
       console.error('Raw response:', text.substring(0, 500));
       
-      // Return fallback response
-      return this.getFallbackResponse();
+      // Throw error instead of returning fallback to maintain reliability
+      throw new Error(`AI response parsing failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
   /**
    * Clamp score to 0-100 range
+   * Now throws error for invalid scores to ensure reliability
    */
   private clampScore(score: unknown): number {
     if (typeof score !== 'number' || isNaN(score)) {
-      return 50; // Default score
+      throw new Error(`Invalid score value: ${score}. Expected a valid number between 0-100.`);
     }
     return Math.max(0, Math.min(100, Math.round(score)));
   }
 
   /**
    * Get fallback response when parsing fails
+   * DEPRECATED: Now throws error instead of returning fallback
    */
   private getFallbackResponse(): GeminiAnalysisOutput {
-    return {
-      scores: {
-        investment: 50,
-        location: 50,
-        condition: 50,
-        marketTiming: 50,
-        overall: 50,
-      },
-      details: {},
-      valuation: {},
-      marketData: {},
-      neighborhood: {
-        nearbyAmenities: [],
-      },
-      pros: ['Unable to analyze the property'],
-      cons: ['Additional information required'],
-      recommendations: ['Please try again later'],
-      summary: 'Unable to generate detailed analysis. Please try again or verify the address.',
-    };
+    throw new Error('Failed to parse AI response. Cannot return fallback data as it would break reliability guarantees.');
   }
 
   /**
