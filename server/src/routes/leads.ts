@@ -264,21 +264,41 @@ router.post(
     });
 
     if (existingLead) {
+      const correlationId = (req as any).correlationId || 'unknown';
       res.status(400).json({
         success: false,
         error: 'Lead with this address already exists',
-        existingLeadId: existingLead.id
+        existingLeadId: existingLead.id,
+        correlationId,
       });
       return;
     }
 
     // Generate AI intelligence
-    console.log('Generating lead intelligence for:', address);
+    const correlationId = (req as any).correlationId || 'unknown';
+    const logContext = {
+      timestamp: new Date().toISOString(),
+      severity: 'INFO',
+      correlationId,
+      message: 'Generating lead intelligence',
+      address: addressString,
+      userId: req.user!.userId,
+    };
+    console.log(JSON.stringify(logContext));
+    
     let intelligence;
     try {
-      intelligence = await leadIntelService.generateLeadIntelligence(address, req.user!.userId);
+      intelligence = await leadIntelService.generateLeadIntelligence(addressString, req.user!.userId);
     } catch (error) {
-      console.error('Failed to generate intelligence:', error);
+      const errorLog = {
+        timestamp: new Date().toISOString(),
+        severity: 'ERROR',
+        correlationId,
+        message: 'Failed to generate lead intelligence',
+        error: error instanceof Error ? error.message : String(error),
+        address: addressString,
+      };
+      console.error(JSON.stringify(errorLog));
       intelligence = null;
     }
 
@@ -343,18 +363,25 @@ router.post(
   })
 );
 
-// Helper to parse address string
+// Helper to parse address string with sanitization
 function parseAddress(address: string): { street: string; city: string; state: string; zipCode: string } {
-  // Simple address parsing - in production you'd use a proper geocoding service
-  const parts = address.split(',').map(p => p.trim());
+  // Sanitize input: remove excessive whitespace and potentially dangerous characters
+  const sanitized = address
+    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+    .replace(/[<>]/g, '') // Remove angle brackets
+    .trim()
+    .substring(0, 500); // Limit length
   
-  let street = parts[0] || address;
-  let city = parts[1] || '';
-  let stateZip = parts[2] || '';
+  // Simple address parsing - in production you'd use a proper geocoding service
+  const parts = sanitized.split(',').map(p => p.trim());
+  
+  let street = (parts[0] || sanitized).substring(0, 200);
+  let city = (parts[1] || '').substring(0, 100);
+  let stateZip = (parts[2] || '').substring(0, 50);
   
   // Parse state and zip from "CA 90210" format
-  const stateZipMatch = stateZip.match(/([A-Z]{2})\s*(\d{5})?/);
-  const state = stateZipMatch ? stateZipMatch[1] : stateZip;
+  const stateZipMatch = stateZip.match(/([A-Z]{2})\s*(\d{5})?/i);
+  const state = stateZipMatch ? stateZipMatch[1].toUpperCase() : stateZip.substring(0, 2).toUpperCase();
   const zipCode = stateZipMatch ? stateZipMatch[2] || '' : '';
   
   return { street, city, state, zipCode };
