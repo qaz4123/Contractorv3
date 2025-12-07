@@ -82,8 +82,8 @@ function App() {
         }}
       />
       <Routes>
-      {/* Landing page at root - go directly to dashboard */}
-      <Route path="/" element={<Layout><Dashboard /></Layout>} />
+      {/* Landing page at root */}
+      <Route path="/" element={<LandingPage />} />
       
       {/* Public Routes */}
       <Route path="/welcome" element={<PublicRoute><LandingPage /></PublicRoute>} />
@@ -100,6 +100,7 @@ function App() {
             <Layout>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
+                  <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/leads" element={<Leads />} />
                   <Route path="/leads/:id" element={<LeadDetail />} />
                   <Route path="/projects" element={<Projects />} />
