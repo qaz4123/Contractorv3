@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useAuthStore } from './store/authStore';
@@ -59,6 +59,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   const { isAuthenticated, token } = useAuthStore();
+  const [isVerifying, setIsVerifying] = useState(true);
 
   // On app load, verify token is still valid
   useEffect(() => {
@@ -74,10 +75,23 @@ function App() {
           useAuthStore.getState().logout();
         }
       }
+      setIsVerifying(false);
     };
     
     verifyAuth();
   }, [token, isAuthenticated]);
+
+  // Show loading screen while verifying auth
+  if (isVerifying) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-100">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-indigo-600 mx-auto mb-4" />
+          <p className="text-slate-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ErrorBoundary>
