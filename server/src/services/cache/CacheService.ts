@@ -53,14 +53,15 @@ export class CacheService {
 
   /**
    * Set an item in cache
-   * Implements LRU eviction when cache is full
+   * Implements simple eviction when cache is full
+   * Note: True LRU requires tracking access patterns, this is a simplified version
    */
   set<T>(key: string, data: T, ttlSeconds?: number): boolean {
-    // If cache is at max size and key doesn't exist, evict least recently used
-    if (this.cache.keys().length >= this.maxSize && !this.cache.has(key)) {
-      const keys = this.cache.keys();
-      if (keys.length > 0) {
-        // Evict first key (LRU - least recently set)
+    // If cache is at max size and key doesn't exist, evict oldest entry
+    if (!this.cache.has(key)) {
+      const keys = this.cache.keys(); // Call only once for efficiency
+      if (keys.length >= this.maxSize && keys.length > 0) {
+        // Evict first key (oldest entry)
         this.cache.del(keys[0]);
         console.log(`⚠️ Cache full, evicted: ${keys[0]}`);
       }

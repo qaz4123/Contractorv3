@@ -132,9 +132,23 @@ export function sanitizeJson<T>(input: any): T | null {
     // Parse to validate JSON structure
     const parsed = JSON.parse(jsonString);
     
-    // Check for common injection patterns
-    const str = JSON.stringify(parsed);
-    if (str.includes('<script>') || str.includes('javascript:')) {
+    // Check for common injection patterns (case-insensitive, comprehensive)
+    const str = JSON.stringify(parsed).toLowerCase();
+    const xssPatterns = [
+      '<script',
+      'javascript:',
+      'onerror=',
+      'onload=',
+      'onclick=',
+      'onmouseover=',
+      'onfocus=',
+      'onblur=',
+      '<iframe',
+      'vbscript:',
+      'data:text/html',
+    ];
+    
+    if (xssPatterns.some(pattern => str.includes(pattern))) {
       console.warn('⚠️ Potential XSS in JSON input blocked');
       return null;
     }

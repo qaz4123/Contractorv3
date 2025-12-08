@@ -250,6 +250,7 @@ export class ReliabilityTester {
    * Analyze consistency of a field across results
    */
   private analyzeFieldConsistency(field: string, values: any[]): ComparisonResult {
+    // Guard clause for empty arrays
     if (values.length === 0) {
       return {
         field,
@@ -261,7 +262,8 @@ export class ReliabilityTester {
     }
 
     // For numeric values, calculate statistical variance
-    if (typeof values[0] === 'number') {
+    // Additional safety check even though we already validated length > 0
+    if (values.length > 0 && typeof values[0] === 'number') {
       const mean = values.reduce((a, b) => a + b, 0) / values.length;
       const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
       const stdDev = Math.sqrt(variance);

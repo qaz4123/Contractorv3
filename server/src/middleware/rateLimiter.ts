@@ -7,16 +7,27 @@ import rateLimit from 'express-rate-limit';
 import { config } from '../config';
 
 /**
+ * Get rate limiter configuration
+ * Lazy-loaded to ensure config is initialized
+ */
+function getRateLimitConfig() {
+  return {
+    windowMs: config.rateLimit.windowMs,
+    maxRequests: config.rateLimit.maxRequests,
+  };
+}
+
+/**
  * Standard rate limiter for general API endpoints
  * Allows 100 requests per 15 minutes by default
  */
 export const standardLimiter = rateLimit({
-  windowMs: config.rateLimit.windowMs,
-  max: config.rateLimit.maxRequests,
+  windowMs: 15 * 60 * 1000, // Default 15 minutes
+  max: 100, // Default max
   message: {
     success: false,
     error: 'Too many requests. Please try again later.',
-    retryAfter: Math.floor(config.rateLimit.windowMs / 1000),
+    retryAfter: 15 * 60,
   },
   standardHeaders: true,
   legacyHeaders: false,

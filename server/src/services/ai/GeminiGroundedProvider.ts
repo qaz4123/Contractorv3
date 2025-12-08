@@ -335,10 +335,18 @@ Return JSON response with:
       // Clean and parse JSON
       let cleanText = text.trim();
       
-      // Remove markdown code blocks if present
-      const jsonMatch = cleanText.match(/```(?:json)?\s*([\s\S]*?)```/);
+      // Remove markdown code blocks if present (use more specific pattern)
+      // Only match the first code block to avoid multiple matches
+      const jsonMatch = cleanText.match(/^```(?:json)?\s*([\s\S]*?)```/);
       if (jsonMatch) {
         cleanText = jsonMatch[1].trim();
+      } else {
+        // Try to find JSON object directly if no code blocks
+        const jsonStart = cleanText.indexOf('{');
+        const jsonEnd = cleanText.lastIndexOf('}');
+        if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+          cleanText = cleanText.slice(jsonStart, jsonEnd + 1);
+        }
       }
 
       const parsed = JSON.parse(cleanText);

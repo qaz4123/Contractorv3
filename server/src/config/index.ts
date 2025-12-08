@@ -108,9 +108,8 @@ class ConfigService {
     if (this.config.server.nodeEnv === 'production') {
       if (!this.config.jwt.secret || this.config.jwt.secret === 'your-secret-key-change-in-production') {
         errors.push('JWT_SECRET must be set to a strong secret in production');
-      }
-
-      if (this.config.jwt.secret.length < 32) {
+      } else if (this.config.jwt.secret.length < 32) {
+        // Only check length if secret exists and is not the default
         errors.push('JWT_SECRET must be at least 32 characters in production');
       }
 
