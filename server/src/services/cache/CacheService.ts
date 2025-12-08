@@ -15,13 +15,17 @@ export class CacheService {
   private cache: NodeCache;
   private hits = 0;
   private misses = 0;
+  private maxSize: number;
 
-  constructor(ttlMinutes: number = 60) {
+  constructor(ttlMinutes: number = 60, maxSize: number = 1000) {
     this.cache = new NodeCache({
       stdTTL: ttlMinutes * 60, // Convert to seconds
       checkperiod: 120, // Check for expired keys every 2 minutes
       useClones: true, // Return clones to prevent mutation
+      maxKeys: maxSize, // Limit number of keys to prevent memory exhaustion
     });
+    
+    this.maxSize = maxSize;
 
     // Log cache events
     this.cache.on('expired', (key) => {
@@ -49,8 +53,19 @@ export class CacheService {
 
   /**
    * Set an item in cache
+   * Implements LRU eviction when cache is full
    */
   set<T>(key: string, data: T, ttlSeconds?: number): boolean {
+    // If cache is at max size and key doesn't exist, evict least recently used
+    if (this.cache.keys().length >= this.maxSize && !this.cache.has(key)) {
+      const keys = this.cache.keys();
+      if (keys.length > 0) {
+        // Evict first key (LRU - least recently set)
+        this.cache.del(keys[0]);
+        console.log(`⚠️ Cache full, evicted: ${keys[0]}`);
+      }
+    }
+    
     const entry: CacheEntry<T> = {
       data,
       cachedAt: new Date(),
@@ -124,5 +139,10 @@ export class CacheService {
   }
 }
 
-// Export singleton instance with 1-hour default TTL
-export const cacheService = new CacheService(60);
+// Export singleton instance with configurable TTL and size
+import { config } from '../../config';
+
+export const cacheService = new CacheService(
+  config.cache.ttlMinutes,
+  config.cache.maxSize
+);

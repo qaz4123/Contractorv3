@@ -7,7 +7,9 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { UserRole } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 import prisma from '../../lib/prisma';
+import { config } from '../../config';
 
 export interface TokenPayload {
   userId: string;
@@ -37,9 +39,17 @@ export class AuthService {
   private refreshExpiresInDays: number;
 
   constructor() {
-    this.jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-    this.jwtExpiresIn = process.env.JWT_EXPIRES_IN || '24h';
-    this.refreshExpiresInDays = parseInt(process.env.REFRESH_EXPIRES_DAYS || '30', 10);
+    this.jwtSecret = config.jwt.secret || 'your-secret-key-change-in-production';
+    this.jwtExpiresIn = config.jwt.expiresIn;
+    this.refreshExpiresInDays = config.jwt.refreshExpiresInDays;
+    
+    // Validate JWT secret on initialization
+    if (!this.jwtSecret || this.jwtSecret === 'your-secret-key-change-in-production') {
+      if (config.isProduction()) {
+        throw new Error('JWT_SECRET must be properly configured in production');
+      }
+      console.warn('⚠️ Using default JWT_SECRET - this is insecure!');
+    }
   }
 
   /**
@@ -184,6 +194,7 @@ export class AuthService {
 
   /**
    * Refresh access token
+   * Fixed: Generate new token BEFORE deleting old one to prevent race condition
    */
   async refreshToken(refreshToken: string): Promise<AuthResult> {
     try {
@@ -203,11 +214,11 @@ export class AuthService {
         return { success: false, error: 'Token expired' };
       }
 
-      // Delete old refresh token
-      await prisma.refreshToken.delete({ where: { id: tokenRecord.id } });
-
-      // Generate new tokens
+      // Generate new tokens FIRST (before deleting old one)
       const tokens = await this.generateTokens(tokenRecord.user);
+
+      // Only delete old refresh token after new one is successfully created
+      await prisma.refreshToken.delete({ where: { id: tokenRecord.id } });
 
       return {
         success: true,
@@ -357,6 +368,13 @@ export class AuthService {
   }
 
   /**
+   * Hash a token for secure storage
+   */
+  private hashToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
+  }
+
+  /**
    * Request password reset - generates a reset token
    * In production, this would send an email with the reset link
    */
@@ -375,10 +393,13 @@ export class AuthService {
       const resetToken = uuidv4();
       const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-      // Store reset token in refresh_tokens table with special prefix
+      // Hash the token before storing (security best practice)
+      const hashedToken = this.hashToken(resetToken);
+
+      // Store hashed reset token in refresh_tokens table with special prefix
       await prisma.refreshToken.create({
         data: {
-          token: `reset_${resetToken}`,
+          token: `reset_${hashedToken}`,
           userId: user.id,
           expiresAt: resetExpires,
         },
@@ -400,9 +421,12 @@ export class AuthService {
    */
   async resetPassword(resetToken: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
     try {
+      // Hash the incoming token to match stored hash
+      const hashedToken = this.hashToken(resetToken);
+      
       // Find the reset token
       const tokenRecord = await prisma.refreshToken.findUnique({
-        where: { token: `reset_${resetToken}` },
+        where: { token: `reset_${hashedToken}` },
         include: { user: true },
       });
 
