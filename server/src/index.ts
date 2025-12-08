@@ -11,13 +11,14 @@ import bcrypt from 'bcryptjs';
 import routes from './routes';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler';
 import prisma from './lib/prisma';
+import { config } from './config';
 
-// Environment validation
-const requiredEnvVars = ['DATABASE_URL'];
-const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
-
-if (missingEnvVars.length > 0) {
-  console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
+// Validate configuration on startup
+try {
+  config.validate();
+  console.log('✅ Configuration validated successfully');
+} catch (error) {
+  console.error('❌ Configuration validation failed:', error instanceof Error ? error.message : String(error));
   process.exit(1);
 }
 
@@ -83,7 +84,7 @@ app.use(compression());
 
 // CORS
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
+  origin: config.server.corsOrigin,
   credentials: true,
 }));
 
@@ -146,7 +147,7 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // Start server
-const PORT = parseInt(process.env.PORT || '8080', 10);
+const PORT = config.server.port;
 
 async function main() {
   try {
@@ -156,8 +157,14 @@ async function main() {
 🏠 Property Analyzer V2
 ━━━━━━━━━━━━━━━━━━━━━━━
 🚀 Server running on port ${PORT}
-📊 Environment: ${process.env.NODE_ENV || 'development'}
+📊 Environment: ${config.server.nodeEnv}
+🔒 Auth: ${config.server.authDisabled ? 'Disabled (Development)' : 'Enabled'}
       `);
+      
+      // Log safe configuration
+      console.log('\n📋 Configuration:');
+      const safeConfig = config.getSafeConfig();
+      console.log(JSON.stringify(safeConfig, null, 2));
     });
 
     // Then connect to database in background (with timeout)

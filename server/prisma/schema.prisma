@@ -183,6 +183,10 @@ model Lead {
   @@index([userId])
   @@index([status])
   @@index([leadScore])
+  @@index([fullAddress]) // Added: for duplicate detection and search
+  @@index([analyzedAt]) // Added: for filtering analyzed leads
+  @@index([userId, status]) // Added: compound index for common query pattern
+  @@index([createdAt]) // Added: for sorting by creation date
   @@map("leads")
 }
 
@@ -241,6 +245,9 @@ model Project {
 
   @@index([userId])
   @@index([status])
+  @@index([portalToken]) // Added: for fast client portal lookups
+  @@index([userId, status]) // Added: compound index for common query
+  @@index([startDate]) // Added: for filtering by project start date
   @@map("projects")
 }
 
