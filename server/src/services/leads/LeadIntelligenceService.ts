@@ -144,13 +144,15 @@ export class LeadIntelligenceService {
       ownerSearch,
       lienSearch,
       permitSearch,
-      saleSearch
+      saleSearch,
+      businessSearch
     ] = await Promise.all([
       this.searchProperty(address),
       this.searchOwner(address),
       this.searchLiens(address),
       this.searchPermits(address),
-      this.searchSaleHistory(address)
+      this.searchSaleHistory(address),
+      this.searchHomeBusiness(address)
     ]);
 
     // Combine all search results
@@ -169,6 +171,9 @@ ${permitSearch}
 
 ## Sale History and Market Data:
 ${saleSearch}
+
+## Business Records at Property Address:
+${businessSearch}
 `;
 
     // AI Analysis to structure the data
@@ -177,7 +182,7 @@ ${saleSearch}
     // Track AI usage for cost attribution
     if (userId) {
       try {
-        await this.usageService.trackAIUsage(userId, 5000, leadId); // Estimate 5000 tokens
+        await this.usageService.trackAIUsage(userId, 6000, leadId); // Estimate 6000 tokens (increased for business search)
       } catch (error) {
         console.error('Failed to track AI usage:', error);
       }

@@ -95,12 +95,18 @@ npm run dev
 
 ### Property Analysis
 1. **Information Search**: Tavily searches the web for property information from Zillow, Redfin, Realtor.com, etc.
-2. **AI Analysis**: Gemini analyzes the data and generates:
-   - Scores (investment, location, condition, market timing)
-   - Pros and cons
-   - Recommendations
-   - Summary
-3. **Caching**: Results are cached for 60 minutes to save API costs
+2. **AI Analysis**: Gemini 2.0 Flash analyzes the data with intelligent scoring:
+   - **Lead Quality Score** (0-100): Overall lead quality considering owner info, contact details, and data completeness
+   - **Renovation Potential** (0-100): Scope of renovation work needed based on property age, condition, and permit history
+   - **Owner Motivation** (0-100): Likelihood owner will invest in renovations based on business activity, permits, and financial indicators
+   - **Profit Potential** (0-100): Estimated profit margin based on property value, renovation scope, and market area
+   - **Data Quality Scoring**: Confidence levels (low/moderate/high) based on information completeness
+   - Business activity detection at property addresses
+   - Permit history analysis with renovation insights
+   - Pros, cons, and actionable recommendations
+   - Comprehensive summary
+3. **Smart Scoring**: AI penalizes missing data and rewards high-confidence information - no generic 50/50 scores
+4. **Caching**: Results are cached for 60 minutes to save API costs
 
 ### Customer Journey Workflow
 The system manages the complete customer lifecycle with connected workflows:

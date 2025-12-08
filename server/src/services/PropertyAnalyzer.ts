@@ -40,6 +40,13 @@ interface PropertyAnalysis {
   marketData: any;
   neighborhood: any;
   scores: any;
+  dataQuality?: {
+    score: number;
+    missingFields: string[];
+    confidence: 'low' | 'moderate' | 'high';
+    sourcesCount: number;
+    notes?: string;
+  };
   pros: string[];
   cons: string[];
   recommendations: string[];
@@ -264,6 +271,7 @@ export class PropertyAnalyzerService {
         nearbyAmenities: aiAnalysis.neighborhood.nearbyAmenities,
       },
       scores: aiAnalysis.scores,
+      dataQuality: aiAnalysis.dataQuality,
       pros: aiAnalysis.pros,
       cons: aiAnalysis.cons,
       recommendations: aiAnalysis.recommendations,

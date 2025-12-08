@@ -80,21 +80,33 @@ interface ScoreBadgeProps {
 
 export function ScoreBadge({ score, label }: ScoreBadgeProps) {
   const getColor = () => {
-    if (score >= 80) return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-    if (score >= 60) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
-    if (score >= 40) return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
-    return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+    if (score >= 80) return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-300 dark:border-green-700';
+    if (score >= 70) return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700';
+    if (score >= 60) return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-300 dark:border-blue-700';
+    if (score >= 50) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700';
+    if (score >= 30) return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 border-orange-300 dark:border-orange-700';
+    return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-300 dark:border-red-700';
+  };
+
+  const getEmoji = () => {
+    if (score >= 80) return '🔥';
+    if (score >= 70) return '✨';
+    if (score >= 60) return '👍';
+    if (score >= 50) return '⚠️';
+    if (score >= 30) return '⚡';
+    return '🚨';
   };
 
   return (
     <span
       className={clsx(
-        'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+        'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border',
         getColor()
       )}
     >
       {label && <span className="mr-1">{label}:</span>}
-      {score}
+      <span className="text-xs">{getEmoji()}</span>
+      <span>{score}</span>
     </span>
   );
 }
