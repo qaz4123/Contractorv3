@@ -11,9 +11,16 @@ async function seedDemoData() {
   console.log('🌱 Starting demo data seeding...');
 
   try {
+    // Only run in development/staging
+    if (process.env.NODE_ENV === 'production') {
+      console.error('❌ Demo data seeding is not allowed in production!');
+      process.exit(1);
+    }
+
     // 1. Create demo users
     console.log('Creating demo users...');
-    const demoPassword = await bcrypt.hash('Demo123!', 10);
+    const demoPasswordPlain = process.env.DEMO_PASSWORD || 'Demo123!';
+    const demoPassword = await bcrypt.hash(demoPasswordPlain, 10);
     
     const contractor = await prisma.user.upsert({
       where: { email: 'demo@contractorcrm.com' },
@@ -242,9 +249,14 @@ async function seedDemoData() {
     console.log(`✓ Created ${tasks.length} sample tasks`);
 
     console.log('\n✅ Demo data seeding completed successfully!');
-    console.log('\nDemo Login Credentials:');
-    console.log('  Email: demo@contractorcrm.com');
-    console.log('  Password: Demo123!');
+    
+    // Only show credentials in development
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('\n📧 Demo Login Credentials:');
+      console.log('  Email: demo@contractorcrm.com');
+      console.log('  Password:', process.env.DEMO_PASSWORD || 'Demo123!');
+      console.log('\n⚠️  These credentials are for DEMO/DEVELOPMENT only!');
+    }
     
   } catch (error) {
     console.error('❌ Error seeding demo data:', error);

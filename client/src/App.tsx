@@ -57,6 +57,9 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return isAuthenticated ? <Navigate to="/" /> : <>{children}</>;
 }
 
+// Cache authService to avoid repeated dynamic imports
+let authServiceCache: any = null;
+
 function App() {
   const { isAuthenticated, token } = useAuthStore();
   const [isVerifying, setIsVerifying] = useState(true);
@@ -66,12 +69,18 @@ function App() {
     const verifyAuth = async () => {
       if (token && isAuthenticated) {
         try {
-          // Import authService dynamically to avoid circular deps
-          const { authService } = await import('./services');
-          await authService.me();
+          // Import authService once and cache it
+          if (!authServiceCache) {
+            const module = await import('./services');
+            authServiceCache = module.authService;
+          }
+          await authServiceCache.me();
         } catch (error) {
           // Token is invalid, logout
-          console.error('Token verification failed:', error);
+          // Only log in development mode
+          if (import.meta.env.DEV) {
+            console.error('Token verification failed:', error);
+          }
           useAuthStore.getState().logout();
         }
       }
