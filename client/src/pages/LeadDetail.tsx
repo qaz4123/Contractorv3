@@ -103,9 +103,7 @@ export function LeadDetail() {
   const { data: lead, isLoading, error } = useQuery({
     queryKey: ['lead', id],
     queryFn: async (): Promise<Lead> => {
-      console.log('Loading lead:', id);
       const leadData = await leadsService.getById(id!);
-      console.log('Lead loaded:', leadData?.id);
       return leadData as Lead;
     },
     enabled: isValidId,

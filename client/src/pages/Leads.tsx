@@ -51,14 +51,11 @@ export function Leads() {
         status: statusFilter || undefined,
         search: searchQuery || undefined,
       });
-      console.log('Leads loaded:', result?.data?.length || 0, 'leads');
       return result;
     },
   });
 
   const handleLeadCreated = (lead: any) => {
-    console.log('Lead created, navigating to:', lead);
-    
     if (!lead || !lead.id) {
       console.error('Invalid lead data received:', lead);
       alert('Lead created but ID is missing. Please refresh the page.');

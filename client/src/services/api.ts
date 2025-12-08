@@ -90,7 +90,6 @@ api.interceptors.response.use(
       
       // Exponential backoff
       const delay = RETRY_DELAY * Math.pow(2, originalRequest.retryCount - 1);
-      console.log(`Retrying request (attempt ${originalRequest.retryCount}/${MAX_RETRIES}) after ${delay}ms...`);
       
       await new Promise(resolve => setTimeout(resolve, delay));
       return api(originalRequest);

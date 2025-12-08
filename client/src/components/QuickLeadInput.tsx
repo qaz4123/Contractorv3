@@ -52,7 +52,6 @@ export function QuickLeadInput({ onLeadCreated, autoFocus = false }: QuickLeadIn
           }
         });
       } catch (err) {
-        console.error('Failed to initialize Google Maps Autocomplete:', err);
         setIsMapsAvailable(false);
       }
     };
@@ -128,14 +127,12 @@ export function QuickLeadInput({ onLeadCreated, autoFocus = false }: QuickLeadIn
         throw new Error('Invalid response from server - no lead data received');
       }
       
-      console.log('Lead created successfully:', leadData.id);
       onLeadCreated(leadData);
       setAddress('');
       
       // Blur input to close autocomplete
       inputRef.current?.blur();
     } catch (error: any) {
-      console.error('Error creating lead:', error);
       const message = error.response?.data?.error || 'Failed to create lead. Please try again.';
       const toast = await import('../utils/toast');
       toast.showError(message);
@@ -166,11 +163,9 @@ export function QuickLeadInput({ onLeadCreated, autoFocus = false }: QuickLeadIn
         throw new Error('Invalid response from server - no lead data received');
       }
       
-      console.log('Lead created successfully (manual):', leadData.id);
       onLeadCreated(leadData);
       setAddress('');
     } catch (error: any) {
-      console.error('Error creating lead:', error);
       const message = error.response?.data?.error || 'Failed to create lead. Please try again.';
       const toast = await import('../utils/toast');
       toast.showError(message);
