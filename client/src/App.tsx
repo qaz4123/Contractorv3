@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useAuthStore } from './store/authStore';
@@ -42,7 +42,13 @@ function PageLoader() {
 }
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
-  // Temporarily disabled - allow access without authentication
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  
+  if (!isAuthenticated) {
+    // Redirect to login
+    return <Navigate to="/login" replace />;
+  }
+  
   return <>{children}</>;
 }
 
@@ -52,8 +58,26 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-  // Temporarily disabled authentication
-  // const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isAuthenticated, token } = useAuthStore();
+
+  // On app load, verify token is still valid
+  useEffect(() => {
+    const verifyAuth = async () => {
+      if (token && isAuthenticated) {
+        try {
+          // Import authService dynamically to avoid circular deps
+          const { authService } = await import('./services');
+          await authService.me();
+        } catch (error) {
+          // Token is invalid, logout
+          console.error('Token verification failed:', error);
+          useAuthStore.getState().logout();
+        }
+      }
+    };
+    
+    verifyAuth();
+  }, [token, isAuthenticated]);
 
   return (
     <ErrorBoundary>
