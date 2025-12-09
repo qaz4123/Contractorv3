@@ -9,17 +9,22 @@ import { formatCurrency, formatRelativeTime } from '../utils/format';
 
 interface Lead {
   id: string;
-  address: string;
+  street?: string;
+  address?: string;
+  fullAddress?: string;
   city?: string;
   state?: string;
   zipCode?: string;
   status: string;
-  priority: string;
+  priority?: string;
   estimatedValue?: number;
+  profitPotential?: number;
   propertyType?: string;
+  name?: string;
   ownerName?: string;
   createdAt: string;
   analyzedAt?: string;
+  leadScore?: number;
   overallScore?: number;
 }
 
@@ -75,7 +80,7 @@ export function Leads() {
         <div>
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4 text-gray-400" />
-            <span className="font-medium">{lead.address}</span>
+            <span className="font-medium">{lead.street || lead.fullAddress || lead.address || 'No address'}</span>
           </div>
           {(lead.city || lead.state) && (
             <p className="text-sm text-gray-500 mt-0.5">
@@ -88,27 +93,29 @@ export function Leads() {
     {
       key: 'score',
       header: 'Lead Score',
-      render: (lead: Lead) => (
+      render: (lead: Lead) => {
+        const score = lead.leadScore ?? lead.overallScore;
+        return (
         <div className="flex flex-col gap-1">
-          {lead.overallScore ? (
+          {score ? (
             <>
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-green-500" />
                 <span className={`font-bold ${
-                  lead.overallScore >= 70 ? 'text-green-600' :
-                  lead.overallScore >= 50 ? 'text-yellow-600' :
+                  score >= 70 ? 'text-green-600' :
+                  score >= 50 ? 'text-yellow-600' :
                   'text-red-600'
                 }`}>
-                  {lead.overallScore}
+                  {score}
                 </span>
                 <span className="text-xs text-gray-400">/100</span>
               </div>
-              {lead.overallScore >= 70 && (
+              {score >= 70 && (
                 <span className="text-xs text-green-600 font-medium" aria-label="Hot Lead">
                   Hot Lead 🔥
                 </span>
               )}
-              {lead.overallScore < 40 && (
+              {score < 40 && (
                 <span className="text-xs text-gray-500">Low Priority</span>
               )}
             </>
@@ -118,7 +125,8 @@ export function Leads() {
             </div>
           )}
         </div>
-      ),
+      );
+      },
     },
     {
       key: 'status',
@@ -130,7 +138,7 @@ export function Leads() {
       header: 'Est. Value',
       render: (lead: Lead) => (
         <span className="font-medium">
-          {lead.estimatedValue ? formatCurrency(lead.estimatedValue) : '-'}
+          {lead.estimatedValue || lead.profitPotential ? formatCurrency(lead.estimatedValue || lead.profitPotential || 0) : '-'}
         </span>
       ),
     },
@@ -140,7 +148,7 @@ export function Leads() {
       render: (lead: Lead) => (
         <div className="flex items-center gap-2">
           <User className="w-4 h-4 text-gray-400" />
-          <span className="text-sm">{lead.ownerName || '-'}</span>
+          <span className="text-sm">{lead.name || lead.ownerName || '-'}</span>
         </div>
       ),
     },
@@ -217,7 +225,7 @@ export function Leads() {
       {/* Table */}
       {isLoading ? (
         <PageLoader message="Loading leads..." />
-      ) : data?.leads?.length === 0 ? (
+      ) : (data?.data?.length === 0 || !data?.data) ? (
         <EmptyState
           icon={<MapPin className="w-12 h-12 text-gray-400" />}
           title="No leads found"
@@ -230,15 +238,15 @@ export function Leads() {
         <>
           <Table
             columns={columns}
-            data={data?.leads || []}
+            data={data?.data || []}
             keyExtractor={(lead) => lead.id}
             onRowClick={(lead) => navigate(`/leads/${lead.id}`)}
           />
-          {data?.pagination && data.pagination.totalPages > 1 && (
+          {data?.totalPages && data.totalPages > 1 && (
             <Pagination
               currentPage={currentPage}
-              totalPages={data.pagination.totalPages}
-              totalItems={data.pagination.total}
+              totalPages={data.totalPages}
+              totalItems={data.total}
               onPageChange={setCurrentPage}
             />
           )}

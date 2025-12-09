@@ -90,13 +90,13 @@ export function Dashboard() {
                 <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded" />
               ))}
             </div>
-          ) : leads?.leads?.length === 0 ? (
+          ) : (leads?.data?.length === 0 || !leads?.data) ? (
             <p className="text-gray-500 dark:text-gray-400 text-center py-8">
               No leads yet. Start by adding your first lead.
             </p>
           ) : (
             <div className="space-y-3">
-              {leads?.leads?.map((lead: { id: string; address: string; status: string; estimatedValue?: number; createdAt: string }) => (
+              {leads?.data?.map((lead: { id: string; address: string; street?: string; city?: string; status: string; estimatedValue?: number; createdAt: string }) => (
                 <div
                   key={lead.id}
                   onClick={() => navigate(`/leads/${lead.id}`)}
@@ -104,7 +104,7 @@ export function Dashboard() {
                 >
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">
-                      {lead.address}
+                      {lead.street || lead.address || 'No address'}
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       {formatDate(lead.createdAt)}
@@ -144,13 +144,13 @@ export function Dashboard() {
                 <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded" />
               ))}
             </div>
-          ) : tasks?.tasks?.length === 0 ? (
+          ) : (tasks?.data?.length === 0 || !tasks?.data) ? (
             <p className="text-gray-500 dark:text-gray-400 text-center py-8">
               No pending tasks.
             </p>
           ) : (
             <div className="space-y-3">
-              {tasks?.tasks?.map((task: { id: string; title: string; priority: string; dueDate?: string }) => (
+              {tasks?.data?.map((task: { id: string; title: string; priority: string; dueDate?: string }) => (
                 <div
                   key={task.id}
                   onClick={() => navigate('/tasks')}

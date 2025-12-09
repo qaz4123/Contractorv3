@@ -56,7 +56,7 @@ export function Register() {
       setAuth(response.user, response.tokens.accessToken);
       // Store refresh token for later use
       localStorage.setItem('refreshToken', response.tokens.refreshToken);
-      navigate('/', { replace: true });
+      navigate('/dashboard', { replace: true });
     } catch (err: unknown) {
       const error = err as { response?: { status?: number; data?: { error?: string; retryAfter?: number }; headers?: Record<string, string> } };
       

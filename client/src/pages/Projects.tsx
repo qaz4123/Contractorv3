@@ -204,7 +204,7 @@ export function Projects() {
       </Card>
 
       {/* Table */}
-      {data?.projects?.length === 0 ? (
+      {(data?.projects?.length === 0 || !data?.projects) ? (
         <EmptyState
           icon={<FolderOpen className="w-12 h-12 text-gray-400" />}
           title="No projects found"
@@ -224,11 +224,11 @@ export function Projects() {
             keyExtractor={(project) => project.id}
             onRowClick={(project) => navigate(`/projects/${project.id}`)}
           />
-          {data?.pagination && data.pagination.totalPages > 1 && (
+          {data?.totalPages && data.totalPages > 1 && (
             <Pagination
               currentPage={currentPage}
-              totalPages={data.pagination.totalPages}
-              totalItems={data.pagination.total}
+              totalPages={data.totalPages}
+              totalItems={data.total}
               onPageChange={setCurrentPage}
             />
           )}
