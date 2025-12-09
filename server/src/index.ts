@@ -37,8 +37,11 @@ const DEMO_USER = {
  * Only runs in development or when AUTH_DISABLED=true
  */
 async function createDemoUser() {
-  // Only create demo user in development
-  if (process.env.NODE_ENV === 'production' && process.env.AUTH_DISABLED !== 'true') {
+  // Allow enabling demo user in production via explicit flag (off by default)
+  const allowDemoInProd = process.env.ENABLE_DEMO_USER === 'true';
+
+  // Only create demo user in development unless flag is set
+  if (process.env.NODE_ENV === 'production' && process.env.AUTH_DISABLED !== 'true' && !allowDemoInProd) {
     return;
   }
 
@@ -124,7 +127,29 @@ app.use((req, res, next) => {
 
 // Root health check (for Cloud Run)
 app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    database: dbConnected ? 'connected' : 'disconnected',
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// API health check with more details
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    success: true,
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    services: {
+      database: dbConnected ? 'connected' : 'disconnected',
+      tavily: !!process.env.TAVILY_API_KEY,
+      gemini: !!process.env.GEMINI_API_KEY,
+      maps: !!process.env.MAPS_API_KEY
+    },
+    environment: process.env.NODE_ENV || 'development',
+    version: '3.0.0'
+  });
 });
 
 // API routes

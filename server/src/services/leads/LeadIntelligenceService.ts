@@ -193,9 +193,8 @@ ${businessSearch}
 
   private async searchProperty(address: string): Promise<string> {
     try {
-      const response = await this.searchProvider.search(
-        `"${address}" property details square feet bedrooms bathrooms year built lot size`,
-        { maxResults: 5 }
+      const response = await this.searchProvider.searchDeep(
+        `"${address}" property details square feet bedrooms bathrooms year built lot size tax assessment`
       );
       return this.formatSearchResults(response.results);
     } catch (error) {
@@ -206,9 +205,8 @@ ${businessSearch}
 
   private async searchOwner(address: string): Promise<string> {
     try {
-      const response = await this.searchProvider.search(
-        `"${address}" property owner name LLC trust records`,
-        { maxResults: 5 }
+      const response = await this.searchProvider.searchDeep(
+        `"${address}" property owner name LLC trust records contact info phone email`
       );
       return this.formatSearchResults(response.results);
     } catch (error) {
@@ -219,9 +217,8 @@ ${businessSearch}
 
   private async searchLiens(address: string): Promise<string> {
     try {
-      const response = await this.searchProvider.search(
-        `"${address}" property liens tax delinquent mortgage foreclosure`,
-        { maxResults: 5 }
+      const response = await this.searchProvider.searchDeep(
+        `"${address}" property liens tax delinquent mortgage foreclosure judgment`
       );
       return this.formatSearchResults(response.results);
     } catch (error) {
@@ -232,9 +229,8 @@ ${businessSearch}
 
   private async searchPermits(address: string): Promise<string> {
     try {
-      const response = await this.searchProvider.search(
-        `"${address}" building permits renovations construction code violations`,
-        { maxResults: 5 }
+      const response = await this.searchProvider.searchDeep(
+        `"${address}" building permits renovations construction code violations history`
       );
       return this.formatSearchResults(response.results);
     } catch (error) {
@@ -245,9 +241,8 @@ ${businessSearch}
 
   private async searchSaleHistory(address: string): Promise<string> {
     try {
-      const response = await this.searchProvider.search(
-        `"${address}" sold price sale history real estate listing`,
-        { maxResults: 5 }
+      const response = await this.searchProvider.searchDeep(
+        `"${address}" sold price sale history real estate listing zillow redfin`
       );
       return this.formatSearchResults(response.results);
     } catch (error) {

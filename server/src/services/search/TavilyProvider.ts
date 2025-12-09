@@ -1,23 +1,3 @@
-/**
- * Tavily Search Provider
- * Uses Tavily API for real-time web search about properties
- */
-
-// Types
-export interface SearchResult {
-  title: string;
-  url: string;
-  content: string;
-  score?: number;
-  source: string;
-}
-
-export interface SearchResponse {
-  results: SearchResult[];
-  query: string;
-  searchedAt: Date;
-}
-
 export interface TavilySearchOptions {
   searchDepth?: 'basic' | 'advanced';
   includeAnswer?: boolean;
@@ -27,19 +7,31 @@ export interface TavilySearchOptions {
   excludeDomains?: string[];
 }
 
+export interface SearchResult {
+  title: string;
+  url: string;
+  content: string;
+  score: number;
+  source: string;
+}
+
+export interface SearchResponse {
+  results: SearchResult[];
+  query: string;
+  searchedAt: Date;
+}
+
 interface TavilyResult {
   title: string;
   url: string;
   content: string;
   score: number;
-  raw_content?: string;
 }
 
 interface TavilyResponse {
+  results: TavilyResult[];
   query: string;
   answer?: string;
-  results: TavilyResult[];
-  response_time: number;
 }
 
 export class TavilyProvider {
@@ -48,6 +40,7 @@ export class TavilyProvider {
 
   constructor(apiKey?: string) {
     this.apiKey = apiKey || process.env.TAVILY_API_KEY || '';
+    
     if (!this.apiKey) {
       console.warn('⚠️ Tavily API key not configured');
     }
@@ -82,14 +75,17 @@ export class TavilyProvider {
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Tavily API error: ${response.status} - ${error}`);
+        const errorText = await response.text();
+        if (response.status === 429) {
+           throw new Error('Tavily API rate limit exceeded');
+        }
+        throw new Error(`Tavily API error: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json() as TavilyResponse;
 
       return {
-        results: data.results.map((r) => ({
+        results: data.results.map((r: TavilyResult) => ({
           title: r.title,
           url: r.url,
           content: r.content,
@@ -106,6 +102,18 @@ export class TavilyProvider {
   }
 
   /**
+   * Perform a deep search with optimized settings for entity extraction
+   */
+  async searchDeep(query: string): Promise<SearchResponse> {
+    return this.search(query, {
+      searchDepth: 'advanced',
+      maxResults: 15,
+      includeAnswer: true,
+      includeRawContent: true
+    });
+  }
+
+  /**
    * Search for property listings and valuations
    */
   async searchPropertyListings(address: string): Promise<SearchResponse> {
@@ -113,7 +121,7 @@ export class TavilyProvider {
     
     return this.search(query, {
       searchDepth: 'advanced',
-      maxResults: 8,
+      maxResults: 10,
       includeDomains: [
         'zillow.com',
         'redfin.com',
@@ -133,7 +141,7 @@ export class TavilyProvider {
     
     return this.search(query, {
       searchDepth: 'advanced',
-      maxResults: 6,
+      maxResults: 8,
       includeDomains: [
         'zillow.com',
         'redfin.com',
@@ -152,7 +160,7 @@ export class TavilyProvider {
     
     return this.search(query, {
       searchDepth: 'advanced',
-      maxResults: 6,
+      maxResults: 8,
       includeDomains: [
         'walkscore.com',
         'greatschools.org',
@@ -171,7 +179,7 @@ export class TavilyProvider {
     
     return this.search(query, {
       searchDepth: 'advanced',
-      maxResults: 8,
+      maxResults: 10,
       includeDomains: [
         'zillow.com',
         'redfin.com',

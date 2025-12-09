@@ -110,15 +110,26 @@ export function QuickLeadInput({ onLeadCreated, autoFocus = false }: QuickLeadIn
     const components = parseAddressComponents(place);
     setAddress(components.fullAddress);
     
+    const payload = {
+      fullAddress: components.fullAddress,
+      street: components.street || components.fullAddress,
+      city: components.city || '',
+      state: components.state || '',
+      zipCode: components.zipCode || '',
+    };
+    console.log('Sending lead payload:', payload);
+
     setIsLoading(true);
     try {
-      const response = await api.post('/leads', {
-        fullAddress: components.fullAddress,
-        street: components.street || components.fullAddress,
-        city: components.city || '',
-        state: components.state || '',
-        zipCode: components.zipCode || '',
-      });
+      const response = await api.post('/leads', payload);
+
+      // Check for API error response (since axios doesn't throw on 4xx)
+      if (response.data && response.data.success === false) {
+        const errorMessage = response.data.error || 'Failed to create lead';
+        const details = response.data.details ? 
+          response.data.details.map((d: any) => `${d.field}: ${d.message}`).join(', ') : '';
+        throw new Error(details ? `${errorMessage}: ${details}` : errorMessage);
+      }
 
       // Extract lead data from response - backend returns {success, data}
       const leadData = response.data?.data || response.data;
@@ -150,11 +161,22 @@ export function QuickLeadInput({ onLeadCreated, autoFocus = false }: QuickLeadIn
   const handleManualSubmit = async () => {
     if (!address.trim() || isLoading) return;
 
+    const payload = {
+      fullAddress: address.trim(),
+    };
+    console.log('Sending manual lead payload:', payload);
+
     setIsLoading(true);
     try {
-      const response = await api.post('/leads', {
-        fullAddress: address.trim(),
-      });
+      const response = await api.post('/leads', payload);
+
+      // Check for API error response (since axios doesn't throw on 4xx)
+      if (response.data && response.data.success === false) {
+        const errorMessage = response.data.error || 'Failed to create lead';
+        const details = response.data.details ? 
+          response.data.details.map((d: any) => `${d.field}: ${d.message}`).join(', ') : '';
+        throw new Error(details ? `${errorMessage}: ${details}` : errorMessage);
+      }
 
       // Extract lead data from response - backend returns {success, data}
       const leadData = response.data?.data || response.data;

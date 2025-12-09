@@ -4,20 +4,13 @@ steps:
     entrypoint: 'npm'
     args: ['ci']
 
-  # Build frontend with backend URL
+  # Build frontend with backend URL and Maps key
   - name: 'node:20'
     entrypoint: 'npm'
     args: ['run', 'build']
     env:
       - 'VITE_API_URL=${_BACKEND_URL}'
-  
-  # Replace Maps API key in index.html
-  - name: 'gcr.io/cloud-builders/gcloud'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        sed -i "s/YOUR_GOOGLE_MAPS_API_KEY/$$MAPS_API_KEY/g" dist/index.html
+      - 'VITE_GOOGLE_MAPS_API_KEY=$$MAPS_API_KEY'
     secretEnv: ['MAPS_API_KEY']
 
   # Deploy to Cloud Storage
@@ -30,22 +23,7 @@ steps:
       - 'dist/'
       - 'gs://${_BUCKET_NAME}/'
 
-  # Set cache control for static assets
-  - name: 'gcr.io/cloud-builders/gsutil'
-    args:
-      - '-m'
-      - 'setmeta'
-      - '-h'
-      - 'Cache-Control:public, max-age=31536000'
-      - 'gs://${_BUCKET_NAME}/assets/**'
 
-  # Set cache control for HTML (no cache)
-  - name: 'gcr.io/cloud-builders/gsutil'
-    args:
-      - 'setmeta'
-      - '-h'
-      - 'Cache-Control:no-cache, no-store, must-revalidate'
-      - 'gs://${_BUCKET_NAME}/index.html'
 
 availableSecrets:
   secretManager:
@@ -58,6 +36,6 @@ options:
 
 substitutions:
   _BUCKET_NAME: 'contractorv3-frontend'
-  _BACKEND_URL: 'https://contractorv3-backend-xxx.run.app'
+  _BACKEND_URL: 'https://contractorv3-backend-l5y4e3htka-uc.a.run.app/api'
 
 timeout: '600s'

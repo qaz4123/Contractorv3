@@ -25,13 +25,14 @@ steps:
       - '--platform=managed'
       - '--allow-unauthenticated'
       - '--add-cloudsql-instances=${_CLOUDSQL_INSTANCE}'
-      - '--set-secrets=DATABASE_URL=DATABASE_URL:latest,JWT_SECRET=JWT_SECRET:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest,TAVILY_API_KEY=TAVILY_API_KEY:latest'
+      - '--set-secrets=DATABASE_URL=DATABASE_URL:latest,JWT_SECRET=JWT_SECRET:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest,TAVILY_API_KEY=TAVILY_API_KEY:latest,MAPS_API_KEY=MAPS_API_KEY:latest'
       - '--memory=512Mi'
       - '--cpu=1'
       - '--min-instances=0'
       - '--max-instances=10'
       - '--timeout=300'
       - '--port=8080'
+      - '--ingress=all'
       - '--set-env-vars=NODE_ENV=production,CORS_ORIGIN=${_CORS_ORIGIN},AUTH_DISABLED=true'
 
 images:
