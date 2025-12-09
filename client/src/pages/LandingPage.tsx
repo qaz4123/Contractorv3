@@ -30,14 +30,14 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleGetStarted = (plan?: string) => {
-    navigate('/auth', { state: { plan } });
+    navigate('/register', { state: { plan } });
   };
 
   const handleLogin = () => {
     if (onLogin) {
       onLogin();
     } else {
-      navigate('/auth');
+      navigate('/login');
     }
   };
 

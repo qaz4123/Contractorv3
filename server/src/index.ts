@@ -3,6 +3,10 @@
  * Clean, modular architecture with AI-powered lead intelligence
  */
 
+// Load environment variables from .env file (for local development)
+// In production (Cloud Run), environment variables are set via --set-env-vars and --set-secrets
+import 'dotenv/config';
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -145,7 +149,7 @@ app.get('/api/health', (req, res) => {
       database: dbConnected ? 'connected' : 'disconnected',
       tavily: !!process.env.TAVILY_API_KEY,
       gemini: !!process.env.GEMINI_API_KEY,
-      maps: !!process.env.MAPS_API_KEY
+      maps: !!(process.env.MAPS_API_KEY || process.env.VITE_MAPS_API_KEY)
     },
     environment: process.env.NODE_ENV || 'development',
     version: '3.0.0'
