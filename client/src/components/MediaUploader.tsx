@@ -71,7 +71,6 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
         setRecordingTime(prev => prev + 1);
       }, 1000);
     } catch (error) {
-      console.error('Failed to start recording:', error);
       alert('Failed to access microphone. Please check permissions.');
     }
   };

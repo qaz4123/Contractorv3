@@ -86,7 +86,6 @@ export function AddressAutocomplete({
           }
         });
       } catch (err) {
-        console.error('Failed to initialize Google Maps Autocomplete:', err);
         setIsMapsAvailable(false);
       }
     };
