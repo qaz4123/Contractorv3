@@ -445,9 +445,11 @@ router.post('/delivery-estimate', async (req: Request, res: Response) => {
     if (!canDeliver) {
       return res.json({
         success: true,
-        canDeliver: false,
-        distance: supplier.distance,
-        message: 'Supplier does not deliver to this location'
+        data: {
+          canDeliver: false,
+          distance: supplier.distance,
+          reason: 'Supplier does not deliver to this location'
+        }
       });
     }
 
@@ -459,11 +461,13 @@ router.post('/delivery-estimate', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      canDeliver: true,
-      distance: Math.round(supplier.distance * 10) / 10,
-      deliveryFee,
-      freeDeliveryMin: supplier.freeDeliveryMin,
-      estimatedTime: `${Math.ceil(supplier.distance / 30 * 60)} mins` // Rough estimate at 30mph
+      data: {
+        canDeliver: true,
+        distance: Math.round(supplier.distance * 10) / 10,
+        deliveryFee,
+        freeDeliveryMin: supplier.freeDeliveryMin,
+        estimatedTime: `${Math.ceil(supplier.distance / 30 * 60)} mins` // Rough estimate at 30mph
+      }
     });
   } catch (error) {
     console.error('Error calculating delivery estimate:', error);

@@ -79,7 +79,7 @@ export const tasksService = {
     return response.data;
   },
 
-  getUpcoming: async (_days: number = 7) => {
+  getUpcoming: async () => {
     // Backend has /tasks/today instead of /tasks/upcoming
     // Fetch today's tasks as a fallback
     const response = await api.get('/tasks/today');

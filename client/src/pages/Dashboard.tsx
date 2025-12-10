@@ -36,7 +36,9 @@ export function Dashboard() {
 
   // Calculate derived stats from the backend response
   const totalLeads = dashboardData?.leads?.total || 0;
-  const activeProjects = dashboardData?.projects?.byStatus?.IN_PROGRESS || dashboardData?.projects?.byStatus?.PLANNING || 0;
+  // Sum both IN_PROGRESS and PLANNING projects for active count
+  const activeProjects = (dashboardData?.projects?.byStatus?.IN_PROGRESS || 0) + 
+                         (dashboardData?.projects?.byStatus?.PLANNING || 0);
   const monthlyRevenue = dashboardData?.invoices?.totalCollected || 0;
 
   return (
