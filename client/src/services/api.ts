@@ -22,8 +22,20 @@ export interface PaginatedApiResponse<T = any> {
   };
 }
 
+// Determine the API base URL
+// If VITE_API_URL is set (production), ensure it includes /api suffix
+// In development, the Vite proxy handles /api prefix
+const getBaseUrl = (): string => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (!envUrl) {
+    return '/api'; // Development - use proxy
+  }
+  // Production - ensure /api is appended if not already present
+  return envUrl.endsWith('/api') ? envUrl : `${envUrl.replace(/\/$/, '')}/api`;
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: getBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },

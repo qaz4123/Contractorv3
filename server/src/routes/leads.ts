@@ -90,10 +90,11 @@ router.get(
 
     if (search) {
       where.OR = [
-        { address: { contains: search, mode: 'insensitive' } },
-        { clientName: { contains: search, mode: 'insensitive' } },
-        { clientEmail: { contains: search, mode: 'insensitive' } },
-        { clientPhone: { contains: search, mode: 'insensitive' } },
+        { fullAddress: { contains: search, mode: 'insensitive' } },
+        { street: { contains: search, mode: 'insensitive' } },
+        { city: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
       ];
     }
 

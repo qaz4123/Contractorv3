@@ -18,17 +18,26 @@ export function Dashboard() {
 
   const { data: leads, isLoading: leadsLoading } = useQuery({
     queryKey: ['recent-leads'],
-    queryFn: () => leadsService.getAll({ limit: 5 }),
+    queryFn: () => leadsService.getAll({ pageSize: 5 }),
   });
 
   const { data: tasks, isLoading: tasksLoading } = useQuery({
     queryKey: ['upcoming-tasks'],
-    queryFn: () => tasksService.getAll({ limit: 5, status: 'PENDING' }),
+    queryFn: () => tasksService.getAll({ pageSize: 5, status: 'PENDING' }),
   });
+
+  // Extract data from the backend response format
+  // Backend returns: { success: true, data: { leads: {...}, projects: {...}, ... } }
+  const dashboardData = stats?.data || stats;
 
   if (statsLoading) {
     return <PageLoader message="Loading dashboard..." />;
   }
+
+  // Calculate derived stats from the backend response
+  const totalLeads = dashboardData?.leads?.total || 0;
+  const activeProjects = dashboardData?.projects?.byStatus?.IN_PROGRESS || dashboardData?.projects?.byStatus?.PLANNING || 0;
+  const monthlyRevenue = dashboardData?.invoices?.totalCollected || 0;
 
   return (
     <div className="space-y-6">
@@ -44,26 +53,22 @@ export function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Leads"
-          value={stats?.totalLeads || 0}
-          change={stats?.leadGrowth ? `${stats.leadGrowth > 0 ? '+' : ''}${stats.leadGrowth}% from last month` : undefined}
-          changeType={stats?.leadGrowth > 0 ? 'positive' : 'negative'}
+          value={totalLeads}
           icon={<Users className="w-6 h-6" />}
         />
         <StatCard
           title="Active Projects"
-          value={stats?.activeProjects || 0}
+          value={activeProjects}
           icon={<FolderOpen className="w-6 h-6" />}
         />
         <StatCard
-          title="Pending Quotes"
-          value={stats?.pendingQuotes || 0}
+          title="Total Tasks"
+          value={dashboardData?.tasks?.total || 0}
           icon={<FileText className="w-6 h-6" />}
         />
         <StatCard
-          title="Monthly Revenue"
-          value={formatCurrency(stats?.monthlyRevenue || 0)}
-          change={stats?.revenueGrowth ? `${stats.revenueGrowth > 0 ? '+' : ''}${stats.revenueGrowth}%` : undefined}
-          changeType={stats?.revenueGrowth > 0 ? 'positive' : 'negative'}
+          title="Total Revenue"
+          value={formatCurrency(monthlyRevenue)}
           icon={<DollarSign className="w-6 h-6" />}
         />
       </div>
