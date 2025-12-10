@@ -23,7 +23,7 @@ export const leadsService = {
   },
 
   update: async (id: string, data: any) => {
-    const response = await api.patch(`/leads/${id}`, data);
+    const response = await api.put(`/leads/${id}`, data);
     return response.data;
   },
 
@@ -33,7 +33,7 @@ export const leadsService = {
   },
 
   analyze: async (id: string) => {
-    const response = await api.post(`/leads/${id}/analyze`);
+    const response = await api.post(`/leads/${id}/refresh-intelligence`);
     return response.data;
   },
 
@@ -60,7 +60,7 @@ export const tasksService = {
   },
 
   update: async (id: string, data: any) => {
-    const response = await api.patch(`/tasks/${id}`, data);
+    const response = await api.put(`/tasks/${id}`, data);
     return response.data;
   },
 
@@ -79,8 +79,10 @@ export const tasksService = {
     return response.data;
   },
 
-  getUpcoming: async (days: number = 7) => {
-    const response = await api.get('/tasks/upcoming', { params: { days } });
+  getUpcoming: async () => {
+    // Backend has /tasks/today instead of /tasks/upcoming
+    // Fetch today's tasks as a fallback
+    const response = await api.get('/tasks/today');
     return response.data;
   },
 };

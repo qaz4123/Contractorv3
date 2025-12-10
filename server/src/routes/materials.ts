@@ -66,7 +66,7 @@ router.get('/suppliers', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error searching suppliers:', error);
-    res.status(500).json({ error: 'Failed to search suppliers' });
+    res.status(500).json({ success: false, error: 'Failed to search suppliers' });
   }
 });
 
@@ -77,7 +77,7 @@ router.get('/suppliers/categories', async (_req: Request, res: Response) => {
     res.json({ success: true, data: categories });
   } catch (error) {
     console.error('Error getting categories:', error);
-    res.status(500).json({ error: 'Failed to get categories' });
+    res.status(500).json({ success: false, error: 'Failed to get categories' });
   }
 });
 
@@ -89,7 +89,7 @@ router.get('/suppliers/brands', async (req: Request, res: Response) => {
     res.json({ success: true, data: brands });
   } catch (error) {
     console.error('Error getting brands:', error);
-    res.status(500).json({ error: 'Failed to get brands' });
+    res.status(500).json({ success: false, error: 'Failed to get brands' });
   }
 });
 
@@ -105,13 +105,13 @@ router.get('/suppliers/:id', async (req: Request, res: Response) => {
     } : undefined;
 
     const supplier = await materialService.getSupplier(id, fromLocation);
-    res.json(supplier);
+    res.json({ success: true, data: supplier });
   } catch (error) {
     console.error('Error getting supplier:', error);
     if (error instanceof Error && error.message === 'Supplier not found') {
-      return res.status(404).json({ error: 'Supplier not found' });
+      return res.status(404).json({ success: false, error: 'Supplier not found' });
     }
-    res.status(500).json({ error: 'Failed to get supplier' });
+    res.status(500).json({ success: false, error: 'Failed to get supplier' });
   }
 });
 
@@ -121,7 +121,7 @@ router.post('/delivery-quotes', async (req: Request, res: Response) => {
     const { latitude, longitude, zipCode, state, orderTotal, category } = req.body;
 
     if (!latitude || !longitude) {
-      return res.status(400).json({ error: 'Latitude and longitude are required' });
+      return res.status(400).json({ success: false, error: 'Latitude and longitude are required' });
     }
 
     const quotes = await materialSupplierService.getDeliveryQuotes(
@@ -140,7 +140,7 @@ router.post('/delivery-quotes', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error getting delivery quotes:', error);
-    res.status(500).json({ error: 'Failed to get delivery quotes' });
+    res.status(500).json({ success: false, error: 'Failed to get delivery quotes' });
   }
 });
 
@@ -151,7 +151,7 @@ router.get('/suppliers/:id/delivery-quote', async (req: Request, res: Response) 
     const { latitude, longitude, orderTotal } = req.query;
 
     if (!latitude || !longitude) {
-      return res.status(400).json({ error: 'Latitude and longitude are required' });
+      return res.status(400).json({ success: false, error: 'Latitude and longitude are required' });
     }
 
     const quote = await materialSupplierService.getDeliveryQuote(
@@ -162,13 +162,13 @@ router.get('/suppliers/:id/delivery-quote', async (req: Request, res: Response) 
     );
 
     if (!quote) {
-      return res.status(404).json({ error: 'Supplier not found or no delivery available' });
+      return res.status(404).json({ success: false, error: 'Supplier not found or no delivery available' });
     }
 
     res.json({ success: true, data: quote });
   } catch (error) {
     console.error('Error getting delivery quote:', error);
-    res.status(500).json({ error: 'Failed to get delivery quote' });
+    res.status(500).json({ success: false, error: 'Failed to get delivery quote' });
   }
 });
 
@@ -178,7 +178,7 @@ router.get('/suppliers/nearby', async (req: Request, res: Response) => {
     const { latitude, longitude, category, limit } = req.query;
 
     if (!latitude || !longitude) {
-      return res.status(400).json({ error: 'Latitude and longitude are required' });
+      return res.status(400).json({ success: false, error: 'Latitude and longitude are required' });
     }
 
     const suppliers = await materialSupplierService.findNearestSuppliers(
@@ -195,7 +195,7 @@ router.get('/suppliers/nearby', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error finding nearby suppliers:', error);
-    res.status(500).json({ error: 'Failed to find nearby suppliers' });
+    res.status(500).json({ success: false, error: 'Failed to find nearby suppliers' });
   }
 });
 
@@ -210,10 +210,10 @@ router.use(authenticate);
 router.post('/suppliers', async (req: Request, res: Response) => {
   try {
     const supplier = await materialService.createSupplier(req.body);
-    res.status(201).json(supplier);
+    res.status(201).json({ success: true, data: supplier });
   } catch (error) {
     console.error('Error creating supplier:', error);
-    res.status(500).json({ error: 'Failed to create supplier' });
+    res.status(500).json({ success: false, error: 'Failed to create supplier' });
   }
 });
 
@@ -242,7 +242,7 @@ router.post('/orders', async (req: Request, res: Response) => {
     });
 
     if (!project) {
-      return res.status(404).json({ error: 'Project not found' });
+      return res.status(404).json({ success: false, error: 'Project not found' });
     }
 
     const order = await materialSupplierService.createOrder({
@@ -265,9 +265,9 @@ router.post('/orders', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error creating order:', error);
     if (error instanceof Error && error.message === 'Supplier not found') {
-      return res.status(404).json({ error: 'Supplier not found' });
+      return res.status(404).json({ success: false, error: 'Supplier not found' });
     }
-    res.status(500).json({ error: 'Failed to create order' });
+    res.status(500).json({ success: false, error: 'Failed to create order' });
   }
 });
 
@@ -284,7 +284,7 @@ router.get('/projects/:projectId/orders', async (req: Request, res: Response) =>
     });
 
     if (!project) {
-      return res.status(404).json({ error: 'Project not found' });
+      return res.status(404).json({ success: false, error: 'Project not found' });
     }
 
     const where: Record<string, unknown> = { projectId };
@@ -311,7 +311,7 @@ router.get('/projects/:projectId/orders', async (req: Request, res: Response) =>
     res.json({ success: true, data: orders });
   } catch (error) {
     console.error('Error getting project orders:', error);
-    res.status(500).json({ error: 'Failed to get orders' });
+    res.status(500).json({ success: false, error: 'Failed to get orders' });
   }
 });
 
@@ -332,13 +332,13 @@ router.get('/orders/:id', async (req: Request, res: Response) => {
     });
 
     if (!order || order.project.userId !== userId) {
-      return res.status(404).json({ error: 'Order not found' });
+      return res.status(404).json({ success: false, error: 'Order not found' });
     }
 
     res.json({ success: true, data: order });
   } catch (error) {
     console.error('Error getting order:', error);
-    res.status(500).json({ error: 'Failed to get order' });
+    res.status(500).json({ success: false, error: 'Failed to get order' });
   }
 });
 
@@ -354,7 +354,7 @@ router.get('/projects/:projectId/orders/summary', async (req: Request, res: Resp
     });
 
     if (!project) {
-      return res.status(404).json({ error: 'Project not found' });
+      return res.status(404).json({ success: false, error: 'Project not found' });
     }
 
     const orders = await prisma.materialOrder.findMany({
@@ -380,7 +380,7 @@ router.get('/projects/:projectId/orders/summary', async (req: Request, res: Resp
     res.json({ success: true, data: summary });
   } catch (error) {
     console.error('Error getting order summary:', error);
-    res.status(500).json({ error: 'Failed to get order summary' });
+    res.status(500).json({ success: false, error: 'Failed to get order summary' });
   }
 });
 
@@ -397,13 +397,13 @@ router.get('/projects/:projectId/nearby-suppliers', async (req: Request, res: Re
       categories ? (categories as string).split(',') : undefined
     );
 
-    res.json(result);
+    res.json({ success: true, ...result });
   } catch (error) {
     console.error('Error finding nearby suppliers:', error);
     if (error instanceof Error && error.message === 'Project not found') {
-      return res.status(404).json({ error: 'Project not found' });
+      return res.status(404).json({ success: false, error: 'Project not found' });
     }
-    res.status(500).json({ error: 'Failed to find nearby suppliers' });
+    res.status(500).json({ success: false, error: 'Failed to find nearby suppliers' });
   }
 });
 
@@ -415,13 +415,13 @@ router.patch('/orders/:id/status', async (req: Request, res: Response) => {
     const { status } = req.body;
 
     const order = await materialService.updateOrderStatus(id, userId, status);
-    res.json(order);
+    res.json({ success: true, data: order });
   } catch (error) {
     console.error('Error updating order status:', error);
     if (error instanceof Error && error.message === 'Order not found') {
-      return res.status(404).json({ error: 'Order not found' });
+      return res.status(404).json({ success: false, error: 'Order not found' });
     }
-    res.status(500).json({ error: 'Failed to update order' });
+    res.status(500).json({ success: false, error: 'Failed to update order' });
   }
 });
 
@@ -436,7 +436,7 @@ router.post('/delivery-estimate', async (req: Request, res: Response) => {
     });
 
     if (!supplier.distance) {
-      return res.status(400).json({ error: 'Cannot calculate distance' });
+      return res.status(400).json({ success: false, error: 'Cannot calculate distance' });
     }
 
     const canDeliver = supplier.offersDelivery && 
@@ -444,9 +444,12 @@ router.post('/delivery-estimate', async (req: Request, res: Response) => {
 
     if (!canDeliver) {
       return res.json({
-        canDeliver: false,
-        distance: supplier.distance,
-        message: 'Supplier does not deliver to this location'
+        success: true,
+        data: {
+          canDeliver: false,
+          distance: supplier.distance,
+          reason: 'Supplier does not deliver to this location'
+        }
       });
     }
 
@@ -457,15 +460,18 @@ router.post('/delivery-estimate', async (req: Request, res: Response) => {
     );
 
     res.json({
-      canDeliver: true,
-      distance: Math.round(supplier.distance * 10) / 10,
-      deliveryFee,
-      freeDeliveryMin: supplier.freeDeliveryMin,
-      estimatedTime: `${Math.ceil(supplier.distance / 30 * 60)} mins` // Rough estimate at 30mph
+      success: true,
+      data: {
+        canDeliver: true,
+        distance: Math.round(supplier.distance * 10) / 10,
+        deliveryFee,
+        freeDeliveryMin: supplier.freeDeliveryMin,
+        estimatedTime: `${Math.ceil(supplier.distance / 30 * 60)} mins` // Rough estimate at 30mph
+      }
     });
   } catch (error) {
     console.error('Error calculating delivery estimate:', error);
-    res.status(500).json({ error: 'Failed to calculate delivery estimate' });
+    res.status(500).json({ success: false, error: 'Failed to calculate delivery estimate' });
   }
 });
 
