@@ -6,6 +6,27 @@ import { Toaster } from 'react-hot-toast';
 import App from './App';
 import './index.css';
 
+// Load Google Maps API dynamically
+const loadGoogleMapsAPI = () => {
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyA83NhFFyPif5Fj1vlBJawzr2AUdznrhPQ';
+  const script = document.createElement('script');
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
+  script.async = true;
+  script.defer = true;
+  script.onerror = () => {
+    window.isMapsApiBlocked = true;
+    window.dispatchEvent(new Event('maps-api-blocked'));
+  };
+  document.head.appendChild(script);
+};
+
+// Load Maps API when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadGoogleMapsAPI);
+} else {
+  loadGoogleMapsAPI();
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

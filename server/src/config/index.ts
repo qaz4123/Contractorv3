@@ -4,6 +4,10 @@
  * Validates required variables on startup
  */
 
+// Load environment variables at the very start
+import dotenv from 'dotenv';
+dotenv.config();
+
 interface DatabaseConfig {
   url: string;
   poolSize: number;
@@ -77,7 +81,7 @@ class ConfigService {
       api: {
         tavilyKey: process.env.TAVILY_API_KEY || null,
         geminiKey: process.env.GEMINI_API_KEY || null,
-        mapsKey: process.env.VITE_MAPS_API_KEY || null,
+        mapsKey: process.env.MAPS_API_KEY || null,
       },
       cache: {
         ttlMinutes: parseInt(process.env.CACHE_TTL_MINUTES || '60', 10),
