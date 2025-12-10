@@ -196,8 +196,14 @@ async function main() {
       console.log(JSON.stringify(safeConfig, null, 2));
     });
 
+    // Log DATABASE_URL (sanitized) for debugging
+    const dbUrl = process.env.DATABASE_URL || '';
+    const sanitizedUrl = dbUrl.replace(/:[^:@]+@/, ':***@');
+    console.log('🔗 DATABASE_URL (sanitized):', sanitizedUrl);
+
     // Then connect to database in background (with timeout)
     try {
+      console.log('🔌 Attempting database connection...');
       await Promise.race([
         prisma.$connect(),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), 10000))
@@ -208,7 +214,8 @@ async function main() {
       // Create demo user if doesn't exist
       await createDemoUser();
     } catch (dbError) {
-      console.warn('⚠️ Database connection failed:', (dbError as Error).message);
+      console.error('⚠️ Database connection failed:', (dbError as Error).message);
+      console.error('⚠️ Full error:', dbError);
       console.warn('⚠️ Running without database persistence');
     }
 
