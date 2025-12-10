@@ -36,6 +36,6 @@ options:
 
 substitutions:
   _BUCKET_NAME: 'contractorv3-frontend'
-  _BACKEND_URL: 'https://contractorv3-backend-l5y4e3htka-uc.a.run.app/api'
+  _BACKEND_URL: 'https://contractorv3-backend-291626603758.us-central1.run.app/api'
 
 timeout: '600s'
