@@ -201,21 +201,38 @@ async function main() {
     const sanitizedUrl = dbUrl.replace(/:[^:@]+@/, ':***@');
     console.log('🔗 DATABASE_URL (sanitized):', sanitizedUrl);
 
-    // Then connect to database in background (with timeout)
+    // Then connect to database with retry logic
+    const connectWithRetry = async (retries = 3, delay = 5000): Promise<boolean> => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          console.log(`🔌 Attempting database connection (attempt ${i + 1}/${retries})...`);
+          await Promise.race([
+            prisma.$connect(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), 30000))
+          ]);
+          console.log('✅ Database connected');
+          return true;
+        } catch (err) {
+          console.warn(`⚠️ Connection attempt ${i + 1} failed:`, (err as Error).message);
+          if (i < retries - 1) {
+            console.log(`⏳ Waiting ${delay/1000}s before retry...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
+      }
+      return false;
+    };
+
     try {
-      console.log('🔌 Attempting database connection...');
-      await Promise.race([
-        prisma.$connect(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), 10000))
-      ]);
-      dbConnected = true;
-      console.log('✅ Database connected');
-      
-      // Create demo user if doesn't exist
-      await createDemoUser();
+      dbConnected = await connectWithRetry(3, 5000);
+      if (dbConnected) {
+        // Create demo user if doesn't exist
+        await createDemoUser();
+      } else {
+        console.warn('⚠️ Running without database persistence after all retries failed');
+      }
     } catch (dbError) {
       console.error('⚠️ Database connection failed:', (dbError as Error).message);
-      console.error('⚠️ Full error:', dbError);
       console.warn('⚠️ Running without database persistence');
     }
 
