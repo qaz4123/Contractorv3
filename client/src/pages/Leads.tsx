@@ -47,7 +47,7 @@ export function Leads() {
   const [statusFilter, setStatusFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery<Awaited<ReturnType<typeof leadsService.getAll>>, Error>({
     queryKey: ['leads', { page: currentPage, status: statusFilter, search: searchQuery }],
     queryFn: async () => {
       const result = await leadsService.getAll({
@@ -228,7 +228,7 @@ export function Leads() {
         <EmptyState
           icon={<MapPin className="w-12 h-12 text-red-400" />}
           title="Error loading leads"
-          description={error instanceof Error ? error.message : "Failed to load leads. Please try again."}
+          description={error && typeof error === 'object' && 'message' in error ? String((error as { message: string }).message) : "Failed to load leads. Please try again."}
           action={
             <Button onClick={() => window.location.reload()}>
               Retry

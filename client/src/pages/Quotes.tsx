@@ -47,7 +47,7 @@ export function Quotes() {
     validDays: 30,
   });
 
-  const { data, isLoading, error, isError } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['quotes', { page: currentPage, status: statusFilter }],
     queryFn: () => quotesService.getAll({
       page: currentPage,

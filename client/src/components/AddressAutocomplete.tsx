@@ -1,13 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { MapPin } from 'lucide-react';
-
-// Extend window to include Google Maps types
-declare global {
-  interface Window {
-    google: any;
-    isMapsApiBlocked?: boolean;
-  }
-}
+// Google Maps types are declared in src/types/google-maps.d.ts
 
 interface AddressAutocompleteProps {
   value: string;
@@ -50,7 +43,7 @@ export function AddressAutocomplete({
 
   useEffect(() => {
     let isMounted = true;
-    let timeoutId: NodeJS.Timeout | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let retryCount = 0;
     const MAX_RETRIES = 20; // 10 seconds max wait
 

@@ -1,9 +1,9 @@
 import api from './api';
-import type { ApiPaginatedResponse, ApiSuccessResponse } from '../../shared/api-types';
+import type { ApiResponse, ApiPaginatedResponseType } from '../../../shared/api-types';
 
 export const leadsService = {
   getAll: async (params?: any) => {
-    const response = await api.get<ApiPaginatedResponse<any>>('/leads', { params });
+    const response = await api.get<ApiPaginatedResponseType<any>>('/leads', { params });
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch leads');
     }
@@ -14,7 +14,7 @@ export const leadsService = {
     if (!id || id === 'undefined' || id === 'null') {
       throw new Error('Invalid lead ID');
     }
-    const response = await api.get<ApiSuccessResponse<any>>(`/leads/${id}`);
+    const response = await api.get<ApiResponse<any>>(`/leads/${id}`);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch lead');
     }
@@ -22,7 +22,7 @@ export const leadsService = {
   },
 
   create: async (data: any) => {
-    const response = await api.post<ApiSuccessResponse<any>>('/leads', data);
+    const response = await api.post<ApiResponse<any>>('/leads', data);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to create lead');
     }
@@ -30,7 +30,7 @@ export const leadsService = {
   },
 
   update: async (id: string, data: any) => {
-    const response = await api.put<ApiSuccessResponse<any>>(`/leads/${id}`, data);
+    const response = await api.put<ApiResponse<any>>(`/leads/${id}`, data);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to update lead');
     }
@@ -38,7 +38,7 @@ export const leadsService = {
   },
 
   delete: async (id: string) => {
-    const response = await api.delete<ApiSuccessResponse<any>>(`/leads/${id}`);
+    const response = await api.delete<ApiResponse<any>>(`/leads/${id}`);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to delete lead');
     }
@@ -46,7 +46,7 @@ export const leadsService = {
   },
 
   analyze: async (id: string) => {
-    const response = await api.post<ApiSuccessResponse<any>>(`/leads/${id}/refresh-intelligence`);
+    const response = await api.post<ApiResponse<any>>(`/leads/${id}/refresh-intelligence`);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to analyze lead');
     }
@@ -54,7 +54,7 @@ export const leadsService = {
   },
 
   getStats: async () => {
-    const response = await api.get<ApiSuccessResponse<any>>('/leads/stats');
+    const response = await api.get<ApiResponse<any>>('/leads/stats');
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch stats');
     }
@@ -64,7 +64,7 @@ export const leadsService = {
 
 export const tasksService = {
   getAll: async (params?: any) => {
-    const response = await api.get<ApiPaginatedResponse<any>>('/tasks', { params });
+    const response = await api.get<ApiPaginatedResponseType<any>>('/tasks', { params });
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch tasks');
     }
@@ -72,7 +72,7 @@ export const tasksService = {
   },
 
   getById: async (id: string) => {
-    const response = await api.get<ApiSuccessResponse<any>>(`/tasks/${id}`);
+    const response = await api.get<ApiResponse<any>>(`/tasks/${id}`);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch task');
     }
@@ -80,7 +80,7 @@ export const tasksService = {
   },
 
   create: async (data: any) => {
-    const response = await api.post<ApiSuccessResponse<any>>('/tasks', data);
+    const response = await api.post<ApiResponse<any>>('/tasks', data);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to create task');
     }
@@ -88,7 +88,7 @@ export const tasksService = {
   },
 
   update: async (id: string, data: any) => {
-    const response = await api.put<ApiSuccessResponse<any>>(`/tasks/${id}`, data);
+    const response = await api.put<ApiResponse<any>>(`/tasks/${id}`, data);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to update task');
     }
@@ -96,7 +96,7 @@ export const tasksService = {
   },
 
   complete: async (id: string) => {
-    const response = await api.patch<ApiSuccessResponse<any>>(`/tasks/${id}/complete`);
+    const response = await api.patch<ApiResponse<any>>(`/tasks/${id}/complete`);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to complete task');
     }
@@ -104,7 +104,7 @@ export const tasksService = {
   },
 
   delete: async (id: string) => {
-    const response = await api.delete<ApiSuccessResponse<any>>(`/tasks/${id}`);
+    const response = await api.delete<ApiResponse<any>>(`/tasks/${id}`);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to delete task');
     }
@@ -112,7 +112,7 @@ export const tasksService = {
   },
 
   getStats: async () => {
-    const response = await api.get<ApiSuccessResponse<any>>('/tasks/stats');
+    const response = await api.get<ApiResponse<any>>('/tasks/stats');
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch stats');
     }
@@ -122,7 +122,7 @@ export const tasksService = {
   getUpcoming: async () => {
     // Backend has /tasks/today instead of /tasks/upcoming
     // Fetch today's tasks as a fallback
-    const response = await api.get<ApiSuccessResponse<any>>('/tasks/today');
+    const response = await api.get<ApiResponse<any>>('/tasks/today');
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch upcoming tasks');
     }
@@ -132,7 +132,7 @@ export const tasksService = {
 
 export const analyticsService = {
   getDashboard: async () => {
-    const response = await api.get<ApiSuccessResponse<any>>('/analytics/dashboard');
+    const response = await api.get<ApiResponse<any>>('/analytics/dashboard');
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch dashboard');
     }
@@ -140,7 +140,7 @@ export const analyticsService = {
   },
 
   getDashboardStats: async () => {
-    const response = await api.get<ApiSuccessResponse<any>>('/analytics/dashboard');
+    const response = await api.get<ApiResponse<any>>('/analytics/dashboard');
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch dashboard stats');
     }
@@ -148,7 +148,7 @@ export const analyticsService = {
   },
 
   getRevenue: async (months?: number) => {
-    const response = await api.get<ApiSuccessResponse<any>>('/analytics/revenue', { params: { months } });
+    const response = await api.get<ApiResponse<any>>('/analytics/revenue', { params: { months } });
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch revenue');
     }
@@ -156,7 +156,7 @@ export const analyticsService = {
   },
 
   getProfitMargins: async () => {
-    const response = await api.get<ApiSuccessResponse<any>>('/analytics/profit-margins');
+    const response = await api.get<ApiResponse<any>>('/analytics/profit-margins');
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch profit margins');
     }
@@ -164,7 +164,7 @@ export const analyticsService = {
   },
 
   getCosts: async () => {
-    const response = await api.get<ApiSuccessResponse<any>>('/analytics/costs');
+    const response = await api.get<ApiResponse<any>>('/analytics/costs');
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch costs');
     }
@@ -172,7 +172,7 @@ export const analyticsService = {
   },
 
   getSuggestions: async () => {
-    const response = await api.get<ApiSuccessResponse<any>>('/automation/suggestions');
+    const response = await api.get<ApiResponse<any>>('/automation/suggestions');
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch suggestions');
     }
@@ -180,7 +180,7 @@ export const analyticsService = {
   },
 
   getLeadAnalytics: async () => {
-    const response = await api.get<ApiSuccessResponse<any>>('/analytics/leads');
+    const response = await api.get<ApiResponse<any>>('/analytics/leads');
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch lead analytics');
     }
@@ -190,7 +190,7 @@ export const analyticsService = {
 
 export const projectsService = {
   getAll: async (params?: any) => {
-    const response = await api.get<ApiPaginatedResponse<any>>('/projects', { params });
+    const response = await api.get<ApiPaginatedResponseType<any>>('/projects', { params });
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch projects');
     }
@@ -198,7 +198,7 @@ export const projectsService = {
   },
 
   getById: async (id: string) => {
-    const response = await api.get<ApiSuccessResponse<any>>(`/projects/${id}`);
+    const response = await api.get<ApiResponse<any>>(`/projects/${id}`);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch project');
     }
@@ -206,7 +206,7 @@ export const projectsService = {
   },
 
   create: async (data: any) => {
-    const response = await api.post<ApiSuccessResponse<any>>('/projects', data);
+    const response = await api.post<ApiResponse<any>>('/projects', data);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to create project');
     }
@@ -214,7 +214,7 @@ export const projectsService = {
   },
 
   update: async (id: string, data: any) => {
-    const response = await api.put<ApiSuccessResponse<any>>(`/projects/${id}`, data);
+    const response = await api.put<ApiResponse<any>>(`/projects/${id}`, data);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to update project');
     }
@@ -222,7 +222,7 @@ export const projectsService = {
   },
 
   delete: async (id: string) => {
-    const response = await api.delete<ApiSuccessResponse<any>>(`/projects/${id}`);
+    const response = await api.delete<ApiResponse<any>>(`/projects/${id}`);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to delete project');
     }
@@ -230,7 +230,7 @@ export const projectsService = {
   },
 
   getStats: async () => {
-    const response = await api.get<ApiSuccessResponse<any>>('/projects/stats');
+    const response = await api.get<ApiResponse<any>>('/projects/stats');
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch stats');
     }
@@ -240,7 +240,7 @@ export const projectsService = {
 
 export const quotesService = {
   getAll: async (params?: any) => {
-    const response = await api.get<ApiPaginatedResponse<any>>('/quotes', { params });
+    const response = await api.get<ApiPaginatedResponseType<any>>('/quotes', { params });
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch quotes');
     }
@@ -248,7 +248,7 @@ export const quotesService = {
   },
 
   getById: async (id: string) => {
-    const response = await api.get<ApiSuccessResponse<any>>(`/quotes/${id}`);
+    const response = await api.get<ApiResponse<any>>(`/quotes/${id}`);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch quote');
     }
@@ -256,7 +256,7 @@ export const quotesService = {
   },
 
   create: async (data: any) => {
-    const response = await api.post<ApiSuccessResponse<any>>('/quotes', data);
+    const response = await api.post<ApiResponse<any>>('/quotes', data);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to create quote');
     }
@@ -264,7 +264,7 @@ export const quotesService = {
   },
 
   update: async (id: string, data: any) => {
-    const response = await api.put<ApiSuccessResponse<any>>(`/quotes/${id}`, data);
+    const response = await api.put<ApiResponse<any>>(`/quotes/${id}`, data);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to update quote');
     }
@@ -272,7 +272,7 @@ export const quotesService = {
   },
 
   send: async (id: string) => {
-    const response = await api.post<ApiSuccessResponse<any>>(`/quotes/${id}/send`);
+    const response = await api.post<ApiResponse<any>>(`/quotes/${id}/send`);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to send quote');
     }
@@ -280,7 +280,7 @@ export const quotesService = {
   },
 
   convertToInvoice: async (id: string) => {
-    const response = await api.post<ApiSuccessResponse<any>>(`/quotes/${id}/convert-to-invoice`);
+    const response = await api.post<ApiResponse<any>>(`/quotes/${id}/convert-to-invoice`);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to convert quote to invoice');
     }
@@ -288,7 +288,7 @@ export const quotesService = {
   },
 
   delete: async (id: string) => {
-    const response = await api.delete<ApiSuccessResponse<any>>(`/quotes/${id}`);
+    const response = await api.delete<ApiResponse<any>>(`/quotes/${id}`);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to delete quote');
     }
@@ -296,7 +296,7 @@ export const quotesService = {
   },
 
   getStats: async () => {
-    const response = await api.get<ApiSuccessResponse<any>>('/quotes/stats');
+    const response = await api.get<ApiResponse<any>>('/quotes/stats');
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch stats');
     }
@@ -306,7 +306,7 @@ export const quotesService = {
 
 export const invoicesService = {
   getAll: async (params?: any) => {
-    const response = await api.get<ApiPaginatedResponse<any>>('/invoices', { params });
+    const response = await api.get<ApiPaginatedResponseType<any>>('/invoices', { params });
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch invoices');
     }
@@ -314,7 +314,7 @@ export const invoicesService = {
   },
 
   getById: async (id: string) => {
-    const response = await api.get<ApiSuccessResponse<any>>(`/invoices/${id}`);
+    const response = await api.get<ApiResponse<any>>(`/invoices/${id}`);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch invoice');
     }
@@ -322,7 +322,7 @@ export const invoicesService = {
   },
 
   create: async (data: any) => {
-    const response = await api.post<ApiSuccessResponse<any>>('/invoices', data);
+    const response = await api.post<ApiResponse<any>>('/invoices', data);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to create invoice');
     }
@@ -330,7 +330,7 @@ export const invoicesService = {
   },
 
   send: async (id: string) => {
-    const response = await api.post<ApiSuccessResponse<any>>(`/invoices/${id}/send`);
+    const response = await api.post<ApiResponse<any>>(`/invoices/${id}/send`);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to send invoice');
     }
@@ -338,7 +338,7 @@ export const invoicesService = {
   },
 
   recordPayment: async (id: string, data: any) => {
-    const response = await api.post<ApiSuccessResponse<any>>(`/invoices/${id}/payments`, data);
+    const response = await api.post<ApiResponse<any>>(`/invoices/${id}/payments`, data);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to record payment');
     }
@@ -346,7 +346,7 @@ export const invoicesService = {
   },
 
   delete: async (id: string) => {
-    const response = await api.delete<ApiSuccessResponse<any>>(`/invoices/${id}`);
+    const response = await api.delete<ApiResponse<any>>(`/invoices/${id}`);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to delete invoice');
     }
@@ -354,7 +354,7 @@ export const invoicesService = {
   },
 
   getStats: async () => {
-    const response = await api.get<ApiSuccessResponse<any>>('/invoices/stats');
+    const response = await api.get<ApiResponse<any>>('/invoices/stats');
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch stats');
     }
@@ -362,7 +362,7 @@ export const invoicesService = {
   },
 
   getOverdue: async () => {
-    const response = await api.get<ApiSuccessResponse<any>>('/invoices/overdue');
+    const response = await api.get<ApiResponse<any>>('/invoices/overdue');
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch overdue invoices');
     }
@@ -375,7 +375,7 @@ export { authService } from './auth';
 
 export const financingService = {
   getAll: async (params?: any) => {
-    const response = await api.get<ApiPaginatedResponse<any>>('/financing', { params });
+    const response = await api.get<ApiPaginatedResponseType<any>>('/financing', { params });
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch financing offers');
     }
@@ -383,7 +383,7 @@ export const financingService = {
   },
 
   getById: async (id: string) => {
-    const response = await api.get<ApiSuccessResponse<any>>(`/financing/${id}`);
+    const response = await api.get<ApiResponse<any>>(`/financing/${id}`);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch financing offer');
     }
@@ -391,7 +391,7 @@ export const financingService = {
   },
 
   create: async (data: any) => {
-    const response = await api.post<ApiSuccessResponse<any>>('/financing', data);
+    const response = await api.post<ApiResponse<any>>('/financing', data);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to create financing offer');
     }
@@ -399,7 +399,7 @@ export const financingService = {
   },
 
   getForLead: async (leadId: string) => {
-    const response = await api.get<ApiPaginatedResponse<any>>(`/financing?leadId=${leadId}`);
+    const response = await api.get<ApiPaginatedResponseType<any>>(`/financing?leadId=${leadId}`);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch financing for lead');
     }
@@ -407,7 +407,7 @@ export const financingService = {
   },
 
   getForProject: async (projectId: string) => {
-    const response = await api.get<ApiPaginatedResponse<any>>(`/financing?projectId=${projectId}`);
+    const response = await api.get<ApiPaginatedResponseType<any>>(`/financing?projectId=${projectId}`);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch financing for project');
     }
@@ -415,7 +415,7 @@ export const financingService = {
   },
 
   updateStatus: async (id: string, status: string) => {
-    const response = await api.patch<ApiSuccessResponse<any>>(`/financing/${id}`, { status });
+    const response = await api.patch<ApiResponse<any>>(`/financing/${id}`, { status });
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to update financing status');
     }
@@ -423,7 +423,7 @@ export const financingService = {
   },
 
   getStats: async () => {
-    const response = await api.get<ApiSuccessResponse<any>>('/financing/stats');
+    const response = await api.get<ApiResponse<any>>('/financing/stats');
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch stats');
     }
@@ -433,7 +433,7 @@ export const financingService = {
 
 export const materialOrdersService = {
   getAll: async (params?: any) => {
-    const response = await api.get<ApiPaginatedResponse<any>>('/materials/orders', { params });
+    const response = await api.get<ApiPaginatedResponseType<any>>('/materials/orders', { params });
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch material orders');
     }
@@ -441,7 +441,7 @@ export const materialOrdersService = {
   },
 
   getById: async (id: string) => {
-    const response = await api.get<ApiSuccessResponse<any>>(`/materials/orders/${id}`);
+    const response = await api.get<ApiResponse<any>>(`/materials/orders/${id}`);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch material order');
     }
@@ -449,7 +449,7 @@ export const materialOrdersService = {
   },
 
   create: async (data: any) => {
-    const response = await api.post<ApiSuccessResponse<any>>('/materials/orders', data);
+    const response = await api.post<ApiResponse<any>>('/materials/orders', data);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to create material order');
     }
@@ -457,7 +457,7 @@ export const materialOrdersService = {
   },
 
   update: async (id: string, data: any) => {
-    const response = await api.patch<ApiSuccessResponse<any>>(`/materials/orders/${id}`, data);
+    const response = await api.patch<ApiResponse<any>>(`/materials/orders/${id}`, data);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to update material order');
     }
@@ -465,7 +465,7 @@ export const materialOrdersService = {
   },
 
   updateStatus: async (id: string, status: string) => {
-    const response = await api.patch<ApiSuccessResponse<any>>(`/materials/orders/${id}`, { status });
+    const response = await api.patch<ApiResponse<any>>(`/materials/orders/${id}`, { status });
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to update material order status');
     }
@@ -475,7 +475,7 @@ export const materialOrdersService = {
 
 export const subcontractorsService = {
   getAll: async (params?: any) => {
-    const response = await api.get<ApiPaginatedResponse<any>>('/subcontractors', { params });
+    const response = await api.get<ApiPaginatedResponseType<any>>('/subcontractors', { params });
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch subcontractors');
     }
@@ -483,7 +483,7 @@ export const subcontractorsService = {
   },
 
   getById: async (id: string) => {
-    const response = await api.get<ApiSuccessResponse<any>>(`/subcontractors/${id}`);
+    const response = await api.get<ApiResponse<any>>(`/subcontractors/${id}`);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch subcontractor');
     }
@@ -491,7 +491,7 @@ export const subcontractorsService = {
   },
 
   search: async (params: any) => {
-    const response = await api.get<ApiPaginatedResponse<any>>('/subcontractors/search', { params });
+    const response = await api.get<ApiPaginatedResponseType<any>>('/subcontractors/search', { params });
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to search subcontractors');
     }
@@ -499,7 +499,7 @@ export const subcontractorsService = {
   },
 
   hire: async (data: any) => {
-    const response = await api.post<ApiSuccessResponse<any>>('/subcontractors/hire', data);
+    const response = await api.post<ApiResponse<any>>('/subcontractors/hire', data);
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to hire subcontractor');
     }
@@ -507,7 +507,7 @@ export const subcontractorsService = {
   },
 
   getHires: async (params?: any) => {
-    const response = await api.get<ApiPaginatedResponse<any>>('/subcontractors/hires', { params });
+    const response = await api.get<ApiPaginatedResponseType<any>>('/subcontractors/hires', { params });
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to fetch hires');
     }
@@ -515,7 +515,7 @@ export const subcontractorsService = {
   },
 
   updateHireStatus: async (hireId: string, status: string) => {
-    const response = await api.patch<ApiSuccessResponse<any>>(`/subcontractors/hires/${hireId}`, { status });
+    const response = await api.patch<ApiResponse<any>>(`/subcontractors/hires/${hireId}`, { status });
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to update hire status');
     }

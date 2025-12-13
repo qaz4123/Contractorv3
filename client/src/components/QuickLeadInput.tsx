@@ -17,7 +17,7 @@ export function QuickLeadInput({ onLeadCreated, autoFocus = false }: QuickLeadIn
 
   useEffect(() => {
     let isMounted = true;
-    let timeoutId: NodeJS.Timeout | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let retryCount = 0;
     const MAX_RETRIES = 20; // 10 seconds max wait
 
@@ -272,11 +272,4 @@ export function QuickLeadInput({ onLeadCreated, autoFocus = false }: QuickLeadIn
       )}
     </div>
   );
-}
-
-declare global {
-  interface Window {
-    google: any;
-    isMapsApiBlocked?: boolean;
-  }
 }
