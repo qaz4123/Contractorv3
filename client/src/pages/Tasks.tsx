@@ -93,7 +93,7 @@ export function Tasks() {
     }
   };
 
-  const groupedTasks = (data?.tasks || []).reduce((acc: Record<string, Task[]>, task: Task) => {
+  const groupedTasks = (data?.data || []).reduce((acc: Record<string, Task[]>, task: Task) => {
     const group = task.status === 'COMPLETED' ? 'completed' : 'active';
     if (!acc[group]) acc[group] = [];
     acc[group].push(task);
@@ -140,7 +140,7 @@ export function Tasks() {
       </Card>
 
       {/* Tasks List */}
-      {data?.tasks?.length === 0 ? (
+      {data?.data?.length === 0 ? (
         <EmptyState
           icon={<CheckCircle2 className="w-12 h-12 text-gray-400" />}
           title="No tasks found"

@@ -10,7 +10,6 @@ export function Login() {
   const { setAuth } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [formData, setFormData] = useState({
     email: '',
     password: '',

@@ -26,11 +26,13 @@ export function Settings() {
 
   const updateProfileMutation = useMutation({
     mutationFn: (data: typeof profileData) => authService.updateProfile(data),
-    onSuccess: (response) => {
+    onSuccess: (response: any) => {
       // Update auth store with new user data, preserve existing token
       const currentToken = useAuthStore.getState().token;
       const currentRefreshToken = useAuthStore.getState().refreshToken;
-      setAuth(response.user, currentToken || '', currentRefreshToken || undefined);
+      if (response && response.user) {
+        setAuth(response.user, currentToken || '', currentRefreshToken || undefined);
+      }
     },
   });
 

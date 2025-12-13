@@ -96,11 +96,20 @@ app.use(helmet({
 // Compression for faster responses
 app.use(compression());
 
-// CORS
-app.use(cors({
-  origin: config.server.corsOrigin,
+// CORS configuration
+// Supports comma-separated origins for production (e.g., "https://app1.com,https://app2.com")
+// Or single origin, or '*' for development
+const corsOrigin = config.server.corsOrigin;
+const corsOptions: cors.CorsOptions = {
+  origin: corsOrigin.includes(',') 
+    ? corsOrigin.split(',').map((o: string) => o.trim()) // Multiple origins
+    : corsOrigin === '*' 
+      ? true // Allow all in development
+      : corsOrigin, // Single origin
   credentials: true,
-}));
+};
+
+app.use(cors(corsOptions));
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));

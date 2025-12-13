@@ -65,6 +65,10 @@ class ConfigService {
       server: {
         port: Number(process.env.PORT) || 8080,
         nodeEnv: process.env.NODE_ENV || 'development',
+        // CORS_ORIGIN can be a comma-separated list of origins for production
+        // Example: "https://app.example.com,https://app2.example.com"
+        // Or a single origin: "https://app.example.com"
+        // Defaults to '*' for development (allows all origins)
         corsOrigin: process.env.CORS_ORIGIN || '*',
         authDisabled: process.env.AUTH_DISABLED === 'true',
       },

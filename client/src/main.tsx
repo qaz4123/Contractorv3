@@ -8,17 +8,7 @@ import './index.css';
 
 // Global singleton for Google Maps API loading
 // Prevents multiple script injections even with React.StrictMode
-declare global {
-  interface Window {
-    __mapsApiLoader?: {
-      loading: boolean;
-      loaded: boolean;
-      promise?: Promise<void>;
-    };
-    google?: any;
-    isMapsApiBlocked?: boolean;
-  }
-}
+// Type declarations are in src/types/google-maps.d.ts
 
 // Initialize global loader state
 if (!window.__mapsApiLoader) {
@@ -51,7 +41,7 @@ const loadGoogleMapsAPI = (): Promise<void> => {
       return Promise.resolve();
     }
     // Script exists but API not ready yet - wait for it (max 10 seconds)
-    loader.promise = new Promise((resolve, reject) => {
+    loader.promise = new Promise((resolve) => {
       let attempts = 0;
       const maxAttempts = 100; // 10 seconds max
       const checkReady = () => {
@@ -88,7 +78,7 @@ const loadGoogleMapsAPI = (): Promise<void> => {
   loader.loading = true;
 
   // Create promise that resolves when Maps API is loaded
-  loader.promise = new Promise((resolve, reject) => {
+  loader.promise = new Promise((resolve) => {
     const script = document.createElement('script');
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
     script.async = true;

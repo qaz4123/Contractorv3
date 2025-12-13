@@ -23,15 +23,23 @@ export interface PaginatedApiResponse<T = any> {
 }
 
 // Determine the API base URL
-// If VITE_API_URL is set (production), ensure it includes /api suffix
-// In development, the Vite proxy handles /api prefix
+// Production: VITE_API_URL should be the full Cloud Run URL (e.g., https://service.run.app)
+//   The code will append /api automatically
+// Development: If VITE_API_URL is not set, use /api (Vite proxy handles it)
 const getBaseUrl = (): string => {
   const envUrl = import.meta.env.VITE_API_URL;
   if (!envUrl) {
-    return '/api'; // Development - use proxy
+    // Development mode - use Vite proxy
+    return '/api';
   }
-  // Production - ensure /api is appended if not already present
-  return envUrl.endsWith('/api') ? envUrl : `${envUrl.replace(/\/$/, '')}/api`;
+  
+  // Production mode - normalize the URL
+  // Remove trailing slash, then append /api if not already present
+  const normalized = envUrl.trim().replace(/\/+$/, ''); // Remove trailing slashes
+  if (normalized.endsWith('/api')) {
+    return normalized; // Already has /api
+  }
+  return `${normalized}/api`; // Append /api
 };
 
 const api = axios.create({

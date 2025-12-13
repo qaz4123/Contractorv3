@@ -137,7 +137,7 @@ export function LeadDetail() {
       }
       return response.data.data;
     },
-    onSuccess: (project: any) => {
+    onSuccess: (_project: any) => {
       queryClient.invalidateQueries({ queryKey: ['lead', id] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       navigate('/projects');

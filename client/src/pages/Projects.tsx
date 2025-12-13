@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, FolderOpen, Clock, CheckCircle, Pause } from 'lucide-react';
 import { Button, Card, Badge, Table, Pagination, Modal, PageLoader, EmptyState, Input } from '../components';
 import { projectsService } from '../services';
@@ -32,7 +32,6 @@ const STATUS_OPTIONS = [
 ];
 
 export function Projects() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   
@@ -47,7 +46,7 @@ export function Projects() {
     startDate: '',
   });
 
-  const { data, isLoading, error, isError } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['projects', { page: currentPage, status: statusFilter }],
     queryFn: () => {
       return projectsService.getAll({
@@ -65,7 +64,7 @@ export function Projects() {
 
   const createMutation = useMutation({
     mutationFn: (data: any) => projectsService.create(data),
-    onSuccess: (data: any) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setIsNewModalOpen(false);
       setNewProject({ name: '', description: '', clientName: '', budget: '', startDate: '' });
@@ -214,7 +213,7 @@ export function Projects() {
       {/* Table */}
       {isLoading ? (
         <PageLoader message="Loading projects..." />
-      ) : isError ? (
+      ) : error ? (
         <EmptyState
           icon={<FolderOpen className="w-12 h-12 text-red-400" />}
           title="Error loading projects"
@@ -243,7 +242,7 @@ export function Projects() {
             columns={columns}
             data={data?.data || []}
             keyExtractor={(project) => project.id}
-            onRowClick={(project) => {
+            onRowClick={(_project) => {
               // Project detail page doesn't exist - could show modal or stay on list
               // For demo, we'll just stay on the list (detail view not implemented)
             }}

@@ -1,4 +1,5 @@
 import api from './api';
+import { useAuthStore } from '../store/authStore';
 
 export interface LoginData {
   email: string;
@@ -51,5 +52,32 @@ export const authService = {
 
   logout: async (refreshToken: string) => {
     await api.post('/auth/logout', { refreshToken });
+  },
+
+  updateProfile: async (_data: { name?: string; company?: string; email?: string }) => {
+    // Note: Backend doesn't have a profile update endpoint yet
+    // This is a placeholder - returns current user data
+    // TODO: Implement PUT /api/auth/profile or PUT /api/users/me endpoint
+    const response = await api.get('/auth/me');
+    if (response.data.success) {
+      return {
+        success: true,
+        user: response.data.data,
+        tokens: {
+          accessToken: useAuthStore.getState().token || '',
+          refreshToken: useAuthStore.getState().refreshToken || '',
+          expiresIn: 86400,
+        },
+      };
+    }
+    throw new Error('Failed to fetch user profile');
+  },
+
+  changePassword: async (currentPassword: string, newPassword: string): Promise<{ success: boolean; message?: string; error?: string }> => {
+    const response = await api.post('/auth/change-password', {
+      currentPassword,
+      newPassword,
+    });
+    return response.data;
   },
 };

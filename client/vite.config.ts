@@ -3,7 +3,9 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: './',
+  // Use '/' for production (Firebase Hosting) - relative paths break SPA routing
+  // In development, Vite dev server handles this correctly
+  base: '/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
@@ -11,6 +13,7 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    // Proxy only used in development - production uses VITE_API_URL
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
