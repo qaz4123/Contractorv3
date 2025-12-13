@@ -39,6 +39,7 @@ options:
 
 substitutions:
   _BUCKET_NAME: 'contractorv3-frontend'
-  _BACKEND_URL: 'https://contractorv3-backend-291626603758.us-central1.run.app/api'
+  # Backend URL should NOT include /api suffix - the code will append it automatically
+  _BACKEND_URL: 'https://contractorv3-backend-291626603758.us-central1.run.app'
 
 timeout: '600s'
