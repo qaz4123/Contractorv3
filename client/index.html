@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contractor CRM</title>
+    <style>
+      .pac-container {
+        z-index: 10000 !important;
+        font-family: 'Inter', system-ui, sans-serif;
+      }
+    </style>
+    <script>
+      // Global handler for Maps API authentication failures (silent)
+      window.gm_authFailure = function() { 
+        window.isMapsApiBlocked = true;
+        window.dispatchEvent(new Event('maps-api-blocked'));
+      };
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
